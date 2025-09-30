@@ -1,4 +1,4 @@
-name=g08-64018-64288-64646
+name=tp2-so-g12
 dir=${PWD##*/}
 
 make clean > /dev/null # clean obj files
