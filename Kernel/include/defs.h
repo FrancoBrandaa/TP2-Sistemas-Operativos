@@ -19,4 +19,13 @@
 #define ACS_DATA        (ACS_PRESENT | ACS_DSEG | ACS_WRITE)
 #define ACS_STACK       (ACS_PRESENT | ACS_DSEG | ACS_WRITE)
 
+//Memory
+typedef struct {
+    uint32_t total;  
+    uint32_t used;   
+    uint32_t free;    
+    void    *base;    
+    void    *end;     
+} MemoryStatus;
+
 #endif
