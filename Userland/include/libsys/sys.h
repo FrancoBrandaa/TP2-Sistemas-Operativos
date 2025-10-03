@@ -2,7 +2,6 @@
 #define _SYS_H_
 
 #include <stdint.h>
-#include <stdint.h>
 
 // Enum of registerable keys.
 // Note: Does not include TAB or RETURN
@@ -118,4 +117,10 @@ void sleep(uint32_t milliseconds);
 int32_t getRegisterSnapshot(int64_t * registers);
 int32_t getCharacterWithoutDisplay(void);
 
-#endif
+// Memory management wrappers (provided by libsys)
+// These are thin wrappers that call kernel syscalls via libsys
+int32_t getMemoryStatus(void *memStatus);
+void *malloc(int size);
+int32_t free(void *ptr);
+
+#endif /* _SYS_H_ */
