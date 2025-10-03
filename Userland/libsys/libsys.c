@@ -83,3 +83,16 @@ int32_t getRegisterSnapshot(int64_t * registers) {
 int32_t getCharacterWithoutDisplay(void) {
     return sys_get_character_without_display();
 }
+
+/* Memory management wrappers */
+int32_t getMemoryStatus(void *memStatus) {
+    return sys_get_mem_status(memStatus);
+}
+
+void *sysMalloc(int size) {
+    return sys_malloc(size);
+}
+
+int32_t sysFree(void *ptr) {
+    return sys_free(ptr);
+}

@@ -4,7 +4,16 @@ KERNEL=kernel.bin
 SOURCES=$(wildcard *.c ./drivers/*.c ./idt/*.c)
 SOURCES_ASM=$(wildcard asm/*.asm)
 HOT_OBJECTS=./drivers/video.o fonts.o # Compiled with -O3
-OBJECTS=$(SOURCES:.c=.o)
+
+# Memory manager selection (default: naive)
+MEMORY_MANAGER ?= naive
+ifeq ($(MEMORY_MANAGER),buddy)
+    MEMORY_SRC = ./memory/buddyManager.c
+else
+    MEMORY_SRC = ./memory/naiveManager.c
+endif
+
+OBJECTS=$(SOURCES:.c=.o) $(MEMORY_SRC:.c=.o)
 OBJECTS_ASM=$(SOURCES_ASM:.asm=.o)
 LOADERSRC=loader.asm
 
@@ -34,4 +43,22 @@ $(LOADEROBJECT):
 clean:
 	rm -rf */*.o *.o *.bin
 
-.PHONY: all clean
+# Memory manager selection targets
+naive:
+	@echo "Switching to Naive Memory Manager..."
+	$(MAKE) clean
+	$(MAKE) MEMORY_MANAGER=naive all
+	@echo "✅ Kernel compiled with Naive Memory Manager"
+
+buddy:
+	@echo "Switching to Buddy Memory Manager..."
+	$(MAKE) clean
+	$(MAKE) MEMORY_MANAGER=buddy all
+	@echo "✅ Kernel compiled with Buddy Memory Manager"
+
+# Show current memory manager
+status:
+	@echo "Current Memory Manager: $(MEMORY_MANAGER)"
+	@echo "Memory Source: $(MEMORY_SRC)"
+
+.PHONY: all clean naive buddy status

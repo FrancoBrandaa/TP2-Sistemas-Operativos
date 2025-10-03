@@ -56,4 +56,14 @@ int32_t sys_get_register_snapshot(int64_t * registers);
 
 int32_t sys_get_character_without_display(void);
 
+/* Memory management syscalls */
+/* 0x80000100 */
+int32_t sys_get_mem_status(void *memStatus);
+/* 0x80000101 */
+void *sys_malloc(int size);
+/* 0x80000102 */
+int32_t sys_free(void *ptr);
+
+
+
 #endif
