@@ -65,7 +65,7 @@ typedef struct MM_rq {
   uint32_t size;
 } mm_rq;
 
-static void * const snakeModuleAddress = (void*)0x500000;
+
 
 #define MAX_BUFFER_SIZE 1024
 #define HISTORY_SIZE 10
@@ -85,7 +85,6 @@ int font(void);
 int help(void);
 int history(void);
 int man(void);
-int snake(void);
 int regs(void);
 int time(void);
 int memtest(void);
@@ -117,7 +116,6 @@ Command commands[] = {
     { .name = "memtest",        .function = (int (*)(void))(unsigned long long)memtest,         .description = "Simple test for dynamic memory allocation" },
     { .name = "regs",           .function = (int (*)(void))(unsigned long long)regs,            .description = "Prints the register snapshot, if any" },
     { .name = "man",            .function = (int (*)(void))(unsigned long long)man,             .description = "Prints the description of the provided command" },
-    { .name = "snake",          .function = (int (*)(void))(unsigned long long)snake,           .description = "Launches the snake game" },
     { .name = "test_mm",        .function = (int (*)(void))(unsigned long long)test_mm,         .description = "Advanced memory manager test (original test_mm.c)" },
     { .name = "time",           .function = (int (*)(void))(unsigned long long)time,            .description = "Prints the current time" },
 };
@@ -340,9 +338,7 @@ int regs(void) {
     return 0;
 }
 
-int snake(void) {
-    return exec(snakeModuleAddress);
-}
+
 
 int memtest(void) {
     printf("Testing dynamic memory allocation...\n");
