@@ -90,7 +90,6 @@ int font(void);
 int help(void);
 int man(void);
 int regs(void);
-int time(void);
 int memtest(void);
 int memstress(void);
 int test_mm(void);
@@ -121,7 +120,6 @@ Command commands[] = {
     {.name = "regs", .function = (int (*)(void))(unsigned long long)regs, .description = "Prints the register snapshot, if any"},
     {.name = "man", .function = (int (*)(void))(unsigned long long)man, .description = "Prints the description of the provided command"},
     {.name = "test_mm", .function = (int (*)(void))(unsigned long long)test_mm, .description = "Advanced memory manager test (original test_mm.c)"},
-    {.name = "time", .function = (int (*)(void))(unsigned long long)time, .description = "Prints the current time"},
 };
 
 char command_history[HISTORY_SIZE][MAX_BUFFER_SIZE] = {0};
@@ -217,14 +215,6 @@ static void printNextCommand(enum REGISTERABLE_KEYS scancode)
     {
         fprintf(FD_STDIN, command_history[last_command_arrowed]);
     }
-}
-
-int time(void)
-{
-    int hour, minute, second;
-    getDate(&hour, &minute, &second);
-    printf("Current time: %xh %xm %xs\n", hour, minute, second);
-    return 0;
 }
 
 int echo(void)
