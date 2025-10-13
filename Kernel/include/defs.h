@@ -19,6 +19,7 @@
 #define ACS_DATA        (ACS_PRESENT | ACS_DSEG | ACS_WRITE)
 #define ACS_STACK       (ACS_PRESENT | ACS_DSEG | ACS_WRITE)
 
+typedef long PID;
 //Memory
 typedef struct {
     uint32_t total;  

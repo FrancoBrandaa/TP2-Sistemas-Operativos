@@ -15,6 +15,8 @@ extern void (*_irq80Handler) (void);
 extern void (*_exceptionHandler00) (void);
 extern void (*_exceptionHandler06) (void);
 
+void forceSwitchContext(void);
+
 void _cli(void);
 
 void _sti(void);

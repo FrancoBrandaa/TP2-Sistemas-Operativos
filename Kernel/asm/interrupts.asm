@@ -3,6 +3,8 @@ GLOBAL _cli
 GLOBAL _sti
 GLOBAL _hlt
 
+GLOBAL setupStack
+
 GLOBAL picMasterMask
 GLOBAL picSlaveMask
 
@@ -20,6 +22,11 @@ EXTERN irqDispatcher
 EXTERN syscallDispatcher
 EXTERN exceptionDispatcher
 EXTERN getStackBase
+
+;EXTERN schedule 
+;EXTERN switchContext
+
+
 
 SECTION .text
 
@@ -66,15 +73,21 @@ SECTION .text
 %macro irqHandlerMaster 1
 	pushState
 
-	mov rdi, %1 ; pass argument to irqDispatcher
+	mov rdi, %1 ; pasaje de parametro
 	call irqDispatcher
 
-	; signal pic EOI (End of Interrupt)
-	mov al, 20h
-	out 20h, al
-
-	popState
-	iretq
+	mov rdi, %1
+	cmp rdi, 0          ; Compare the parameter with 0
+	jne .normal_flow    ; If it is not 0, jump to the normal flow
+	mov rdi,rsp
+	call switchContext ; in case its 0, we need to switch context (maybe)
+	mov rsp,rax
+	.normal_flow:
+		; signal pic EOI (End of Interrupt)
+		mov al, 20h
+		out 20h, al
+		popState
+		iretq
 %endmacro
 
 %macro exceptionHandler 1
@@ -162,6 +175,9 @@ picSlaveMask:
 ; 8254 Timer (Timer Tick)
 _irq00Handler:
 	irqHandlerMaster 0
+forceSwitchContext:
+	int 20h
+	ret
 
 ; Keyboard
 _irq01Handler:
@@ -240,6 +256,24 @@ _exceptionHandler00:
 ; Invalid Opcode Exception
 _exceptionHandler06:
 	exceptionHandler 6
+
+setupStack:
+	push rbp
+    mov rbp, rsp
+
+	mov rsp, rcx
+	push 0x0
+	push rcx
+	push 0x202
+	push 0x8
+	push r8 ; Entrypoint
+
+	pushState
+	mov rax, rsp
+
+	mov rsp, rbp
+    pop rbp
+    ret
 
 section .bss
 	exception_register_snapshot resq 18
