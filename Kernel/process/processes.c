@@ -1,4 +1,4 @@
-#include <process.h> 
+#include <process.h>
 #include <memoryManager.h>
 #include <defs.h>
 #include <stdint.h>
@@ -8,11 +8,41 @@
 #include <videoDriver.h>
 #include <fileDescriptors.h>
 
-#define SHELLPID 2 
+#define SHELLPID 2
 
 Process processes[MAX_PROCESSES];
 PID current;
- 
+
+void setup_process_stack(pcb_t *proc, void (*entry_point)())
+{
+    uint64_t *stack = (uint64_t *)(proc->stack_base + STACK_SIZE);
+
+    // Falsifica el contexto como si hubiera sido interrumpido
+    *(--stack) = 0; // r15
+    *(--stack) = 0; // r14
+    *(--stack) = 0; // r13
+    *(--stack) = 0; // r12
+    *(--stack) = 0; // r11
+    *(--stack) = 0; // r10
+    *(--stack) = 0; // r9
+    *(--stack) = 0; // r8
+    *(--stack) = 0; // rbp
+    *(--stack) = 0; // rdi
+    *(--stack) = 0; // rsi
+    *(--stack) = 0; // rdx
+    *(--stack) = 0; // rcx
+    *(--stack) = 0; // rbx
+    *(--stack) = 0; // rax
+
+    // Contexto para iretq
+    *(--stack) = (uint64_t)entry_point;                     // RIP
+    *(--stack) = 0x8;                                       // CS
+    *(--stack) = 0x202;                                     // RFLAGS (IF=1)
+    *(--stack) = (uint64_t)(proc->stack_base + STACK_SIZE); // RSP
+    *(--stack) = 0x10;                                      // SS
+
+    proc->rsp = (uint64_t)stack;
+}
 
 /*
  * isValidPID
@@ -102,7 +132,23 @@ void waitProcess(PID pidToWait, int *wstatus)
  *    `entryPoint`). Esta función no debe llamarse manualmente desde fuera
  *    del subsistema de procesos; se usa al crear y arrancar procesos.
  */
-int processLoader(int argc, char *argv[], entryPoint entry)
+extern pcb_t *current_process;
+int processLoader(int argc, char *argv[], entryPoint entry) void sys_exit()
+{
+    current_process->state = EXITED;
+    asm volatile("int $0x20");
+}
+
+void sys_block()
+{
+    current_process->state = BLOCKED;
+    asm volatile("int $0x20");
+}
+
+void sys_yield()
+{
+    asm volatile("int $0x20");
+}
 {
     int returnValue = entry(argc, argv);
     PID processPid = getpid();
@@ -127,6 +173,25 @@ PID initProcesses(void)
     current = 1;
     for (int i = 0; i < MAX_PROCESSES; i++)
     {
+        void idle_function()
+        {
+            while (1)
+            {
+                asm volatile("hlt");
+            }
+        }
+
+        pcb_t idle_pcb;
+        extern pcb_t *idle_process;
+
+        void init_idle_process()
+        {
+            idle_pcb.stack_base = (uint8_t *)malloc(STACK_SIZE);
+            idle_pcb.pid = 0;
+            idle_pcb.state = READY;
+            setup_process_stack(&idle_pcb, idle_function);
+            idle_process = &idle_pcb;
+        }
         processes[i].pid = i + 1;
         processes[i].state = DEAD;
         processes[i].argv = NULL;
@@ -160,7 +225,7 @@ int getFreeProcess()
             return i;
         }
     }
-    return -1;  
+    return -1;
 }
 
 /*
@@ -353,64 +418,8 @@ void freeProcessesInformation(Process *processesInfo)
     freeMemory(processesInfo);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // int kill(PID pid)
 // {
-    
 
 //     if (pid <= INITPID || pid > MAX_PID)
 //         return -1;
