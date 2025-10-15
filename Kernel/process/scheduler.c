@@ -5,8 +5,8 @@
 
 #include "../include/memoryManager.h"
 #include "../include/scheduler.h"
-#include "../include/syscallHandle.h"
-#include "../include/videoDriver.h"
+#include "../include/syscallDispatcher.h"
+#include "../include/video.h"
 #include <interrupts.h>
 Quantum quantumsLeft = 0;
 List list;
@@ -29,7 +29,7 @@ void garbageCollect()
 
     do
     {
-        if (current->pcb->state == BLOCKED || current->pcb->state == DEAD)
+        if (current->pcb->state == BLOCKED || current->pcb->state == EXITED)
         {
             temp = current;
 
@@ -109,7 +109,7 @@ Process *unschedule()
     return pcb;
 }
 
-uint64_t *switchContent(uint64_t *rsp)
+uint64_t *switchContext(uint64_t *rsp)
 {
     if (currentProcess == NULL)
     {
@@ -124,7 +124,7 @@ uint64_t *switchContent(uint64_t *rsp)
             return rsp;
         }
         currentProcess->stackEnd = rsp;
-        schedule(currentProcess);
+        schedule(currentProcess);  //a la cola bro
         currentProcess->state = READY;
     }
     if (currentProcess->state == BLOCKED)
@@ -142,7 +142,7 @@ uint64_t *switchContent(uint64_t *rsp)
             return rsp;
         }
         quantumsLeft = currentProcess->priority - 1;
-    } while (currentProcess->state == BLOCKED || currentProcess->state == DEAD);
+    } while (currentProcess->state == BLOCKED || currentProcess->state == EXITED);
 
     clearYield();
     currentProcess->state = RUNNING;

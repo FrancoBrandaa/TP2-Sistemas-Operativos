@@ -47,7 +47,7 @@ Process * unschedule();
  *   rsp - Pointer to the current stack pointer.
  * Returns the stack pointer of the next process.
  */
-uint64_t * switchContent(uint64_t * rsp);
+uint64_t * switchContext(uint64_t * rsp);
 
 /*
  * Retrieves the process currently being executed.

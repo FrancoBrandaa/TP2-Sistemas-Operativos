@@ -31,6 +31,7 @@ void hideCursor(void);
 void retractPosition();
 void clearPreviousCharacter(void);
 uint16_t getXBufferPosition(void);
+static inline int64_t strlen(const char * str);
 
 uint8_t increaseFontSize(void);
 uint8_t decreaseFontSize(void);

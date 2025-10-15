@@ -4,6 +4,7 @@ GLOBAL _sti
 GLOBAL _hlt
 
 GLOBAL setupStack
+GLOBAL forceSwitchContext
 
 GLOBAL picMasterMask
 GLOBAL picSlaveMask
@@ -24,7 +25,7 @@ EXTERN exceptionDispatcher
 EXTERN getStackBase
 
 ;EXTERN schedule 
-;EXTERN switchContext
+EXTERN switchContext
 
 
 
@@ -261,20 +262,32 @@ setupStack:
 	push rbp
     mov rbp, rsp
 
-	mov rsp, rcx
-	push 0x0
-	push rcx
-	push 0x202
-	push 0x8
-	push r8 ; Entrypoint
 
-	pushState
+	; Align?
+	mov rsp, rcx ; stackbase
+	push 0x0 ;  SS
+	push rcx ; RSP
+	push 0x202 ; RFLAGS
+	push 0x8 ; CS
+	push r8 ; Entrypoint (RIP)
+	pushState ; Argumentos
+
 	mov rax, rsp
 
 	mov rsp, rbp
     pop rbp
     ret
-
+; ==========================================================
+;  AMD64 System V ABI - Orden de registros para argumentos
+; ==========================================================
+; Argumentos enteros / punteros (en orden):
+;   1 → RDI
+;   2 → RSI
+;   3 → RDX
+;   4 → RCX
+;   5 → R8
+;   6 → R9
+; ==========================================================
 section .bss
 	exception_register_snapshot resq 18
 	register_snapshot resq 18

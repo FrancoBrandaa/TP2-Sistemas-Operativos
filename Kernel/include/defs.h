@@ -4,7 +4,7 @@
 
 #ifndef _DEFS_
 #define _DEFS_
-
+#include <stdint.h>
 /* Segment access flags */
 #define ACS_PRESENT     0x80            /* segment present in memory */
 #define ACS_CSEG        0x18            /* code segment */
@@ -19,6 +19,17 @@
 #define ACS_DATA        (ACS_PRESENT | ACS_DSEG | ACS_WRITE)
 #define ACS_STACK       (ACS_PRESENT | ACS_DSEG | ACS_WRITE)
 
+#define STDIN 0
+#define STDOUT 1
+#define STDERR 2
+
+#define BYTE_LENGHT 8
+#define TWO_BYTE_LENGHT 16
+
+#define NULL 0
+
+#define STACK_SIZE 4096
+
 typedef long PID;
 //Memory
 typedef struct {
@@ -28,5 +39,17 @@ typedef struct {
     void    *base;    
     void    *end;     
 } MemoryStatus;
+//Process
+
+typedef enum
+{
+  READY = 0,
+  RUNNING,
+  BLOCKED,
+  EXITED,
+} ProcessState;
+
+typedef unsigned int Priority;
+typedef unsigned int Quantum;
 
 #endif

@@ -28,15 +28,43 @@ typedef struct
 typedef struct
 {
     char name[MAX_NAME_LENGTH];
-    PID pid, parentpid, waitingPID;
+    PID pid;//, parentpid, waitingPID;
     int argc;
     char **argv;
+    Priority priority;
+    int foreground;
     entryPoint entryPoint;//ver
     ProcessState state;
     uint64_t *stackBase, *stackEnd;
     int childReturnValue;
     int fds[2]; // File descriptors
 } Process;
+
+// typedef struct
+// {
+//     int argc;
+//     char **argv;
+//     char *name;`
+//     Priority priority;
+//     entryPoint entryPoint;
+//     int foreground;
+//     int fds[2];
+// } creationParameters;
+
+// typedef struct
+// {
+//     char name[MAX_NAME_LENGTH];
+//     PID pid, parentpid, waitingPID;
+//     int argc;
+//     char **argv;
+//     Priority priority;
+//     entryPoint entryPoint;
+//     int foreground;
+//     ProcessState state;
+//     uint64_t *stackBase, *stackEnd;
+//     int childReturnValue;
+//     int fds[2]; // File descriptors
+// } Process;
 
 
 /*
@@ -99,7 +127,7 @@ int kill(PID pid);
  *   pid - The PID of the parent process.
  * Returns the number of terminated child processes, or a negative value on failure.
  */
-int killAllChildren(PID pid);
+//int killAllChildren(PID pid);
 
 /*
  * Waits for a process to finish execution.
@@ -153,12 +181,12 @@ int checkPriority(Priority priority);
  *   fds - Pointer to an array to store the file descriptors.
  * Returns the number of file descriptors, or a negative value on failure.
  */
-int getFileDescriptors(int *fds);
+//int getFileDescriptors(int *fds);
 
 /*
  * Blocks all processes except the shell.
  */
-void blockAllExceptShell();
+//void blockAllExceptShell();
 #endif
 
 

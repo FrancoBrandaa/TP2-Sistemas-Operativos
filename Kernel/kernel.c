@@ -60,7 +60,10 @@ int main()
 
 	setFontSize(2);
 	
-	((EntryPoint)shellModuleAddress)();
+	while(1) {
+		print("Kernel is running...\n");
+	}
+	//((EntryPoint)shellModuleAddress)();
 
 	__builtin_unreachable();
 

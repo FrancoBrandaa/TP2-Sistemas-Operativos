@@ -5,51 +5,22 @@
 #include <lib.h>
 #include <interrupts.h>
 #include <scheduler.h>
-#include <videoDriver.h>
-#include <fileDescriptors.h>
+#include <video.h>
+#include <string.h>
+
+//#include <fileDescriptors.h>
 
 #define SHELLPID 2
 
 Process processes[MAX_PROCESSES];
 PID current;
 
-void setup_process_stack(pcb_t *proc, void (*entry_point)())
-{
-    uint64_t *stack = (uint64_t *)(proc->stack_base + STACK_SIZE);
-
-    // Falsifica el contexto como si hubiera sido interrumpido
-    *(--stack) = 0; // r15
-    *(--stack) = 0; // r14
-    *(--stack) = 0; // r13
-    *(--stack) = 0; // r12
-    *(--stack) = 0; // r11
-    *(--stack) = 0; // r10
-    *(--stack) = 0; // r9
-    *(--stack) = 0; // r8
-    *(--stack) = 0; // rbp
-    *(--stack) = 0; // rdi
-    *(--stack) = 0; // rsi
-    *(--stack) = 0; // rdx
-    *(--stack) = 0; // rcx
-    *(--stack) = 0; // rbx
-    *(--stack) = 0; // rax
-
-    // Contexto para iretq
-    *(--stack) = (uint64_t)entry_point;                     // RIP
-    *(--stack) = 0x8;                                       // CS
-    *(--stack) = 0x202;                                     // RFLAGS (IF=1)
-    *(--stack) = (uint64_t)(proc->stack_base + STACK_SIZE); // RSP
-    *(--stack) = 0x10;                                      // SS
-
-    proc->rsp = (uint64_t)stack;
-}
-
 /*
  * isValidPID
  * ----------
  * Qué hace:
  *  - Comprueba que un PID está dentro del rango permitido y que el proceso
- *    correspondiente no está en estado DEAD.
+ *    correspondiente no está en estado EXITED.
  * Uso:
  *  - Parámetro: `PID pid`.
  *  - Devuelve: 1 si el PID es válido y el proceso está activo, 0 en caso
@@ -57,7 +28,7 @@ void setup_process_stack(pcb_t *proc, void (*entry_point)())
  */
 int isValidPID(PID pid)
 {
-    return pid > 0 && pid <= MAX_PID && processes[pid - 1].state != DEAD;
+    return pid > 0 && pid <= MAX_PID && processes[pid - 1].state != EXITED;
 }
 
 /*
@@ -76,18 +47,18 @@ int isValidPID(PID pid)
  *  - Modifica `waitingPID` y `childReturnValue` de procesos y cambia su
  *    estado mediante `unblockProcess`.
  */
-void unblockWaitingProcesses(PID pid, int returnValue)
-{
-    for (int i = 0; i < MAX_PROCESSES; i++)
-    {
-        if (processes[i].waitingPID == pid && processes[i].state == BLOCKED)
-        {
-            processes[i].waitingPID = NONPID;
-            processes[i].childReturnValue = returnValue;
-            unblockProcess(processes[i].pid);
-        }
-    }
-}
+// void unblockWaitingProcesses(PID pid, int returnValue)
+// {
+//     for (int i = 0; i < MAX_PROCESSES; i++)
+//     {
+//         if (processes[i].waitingPID == pid && processes[i].state == BLOCKED)
+//         {
+//             processes[i].waitingPID = NONPID;
+//             processes[i].childReturnValue = returnValue;
+//             unblockProcess(processes[i].pid);
+//         }
+//     }
+// }
 
 /*
  * waitProcess
@@ -103,19 +74,72 @@ void unblockWaitingProcesses(PID pid, int returnValue)
  *  - Si `pidToWait` no es válido, o coincide con el PID del proceso actual,
  *    la función no hace nada.
  */
-void waitProcess(PID pidToWait, int *wstatus)
+// void waitProcess(PID pidToWait, int *wstatus)
+// {
+//     Process *currentProcess = getCurrentProcess();
+//     if (!isValidPID(pidToWait) || currentProcess->pid == pidToWait || processes[pidToWait - 1].state == EXITED)
+//         return;
+
+//     currentProcess->waitingPID = pidToWait;
+//     blockProcess(currentProcess->pid);
+
+//     if (wstatus != NULL)
+//         *wstatus = currentProcess->childReturnValue;
+// }
+
+
+
+/*
+ * initProcesses
+ * -------------
+ * Qué hace:
+ *  - Inicializa la tabla global `processes`, asignando PIDs secuenciales y
+ *    marcando todos los procesos como `EXITED`. También inicializa la
+ *    variable global `current`.
+ * Uso:
+ *  - Llamar durante la inicialización del kernel antes de crear procesos.
+ *  - Devuelve 0 (actualmente) como código de éxito.
+ */
+PID initProcesses(void)
 {
-    Process *currentProcess = getCurrentProcess();
-    if (!isValidPID(pidToWait) || currentProcess->pid == pidToWait || processes[pidToWait - 1].state == DEAD)
-        return;
-
-    currentProcess->waitingPID = pidToWait;
-    blockProcess(currentProcess->pid);
-
-    if (wstatus != NULL)
-        *wstatus = currentProcess->childReturnValue;
+    current = 1;
+    for (int i = 0; i < MAX_PROCESSES; i++)
+    {
+        processes[i].pid = i + 1;
+        processes[i].state = EXITED;
+        processes[i].argv = NULL;
+        processes[i].argc = 0;
+        //processes[i].waitingPID = NONPID;
+    }
+    return 0;
 }
 
+int checkName(const char *name)
+{
+    return name != NULL && strlen(name) <= MAX_NAME_LENGTH;
+}
+
+/*
+ * getFreeProcess
+ * --------------
+ * Qué hace:
+ *  - Busca una entrada libre en la tabla `processes` (un proceso con estado
+ *    EXITED) y devuelve su índice.
+ * Uso:
+ *  - Sin parámetros. Devuelve el índice del slot libre o -1 si no hay
+ *    ninguno.
+ */
+int getFreeProcess()
+{
+    for (int i = 0; i < MAX_PROCESSES; i++)
+    {
+        if (processes[i].state == EXITED)
+        {
+            return i;
+        }
+    }
+    return -1;  
+}
 /*
  * processLoader
  * -------------
@@ -131,103 +155,17 @@ void waitProcess(PID pidToWait, int *wstatus)
  *  - Se espera que `entry` sea la función principal del proceso (tipo
  *    `entryPoint`). Esta función no debe llamarse manualmente desde fuera
  *    del subsistema de procesos; se usa al crear y arrancar procesos.
+ * 
+ * VER DE MEJORAR EL ESTILO REMOVIENDO ESTA FUNCION
  */
-extern pcb_t *current_process;
-int processLoader(int argc, char *argv[], entryPoint entry) void sys_exit()
-{
-    current_process->state = EXITED;
-    asm volatile("int $0x20");
-}
-
-void sys_block()
-{
-    current_process->state = BLOCKED;
-    asm volatile("int $0x20");
-}
-
-void sys_yield()
-{
-    asm volatile("int $0x20");
-}
+int processLoader(int argc, char *argv[], entryPoint entry)
 {
     int returnValue = entry(argc, argv);
     PID processPid = getpid();
-    unblockWaitingProcesses(processPid, returnValue);
+    //unblockWaitingProcesses(processPid, returnValue);
     kill(processPid);
     return returnValue;
-}
-
-/*
- * initProcesses
- * -------------
- * Qué hace:
- *  - Inicializa la tabla global `processes`, asignando PIDs secuenciales y
- *    marcando todos los procesos como `DEAD`. También inicializa la
- *    variable global `current`.
- * Uso:
- *  - Llamar durante la inicialización del kernel antes de crear procesos.
- *  - Devuelve 0 (actualmente) como código de éxito.
- */
-PID initProcesses(void)
-{
-    current = 1;
-    for (int i = 0; i < MAX_PROCESSES; i++)
-    {
-        void idle_function()
-        {
-            while (1)
-            {
-                asm volatile("hlt");
-            }
-        }
-
-        pcb_t idle_pcb;
-        extern pcb_t *idle_process;
-
-        void init_idle_process()
-        {
-            idle_pcb.stack_base = (uint8_t *)malloc(STACK_SIZE);
-            idle_pcb.pid = 0;
-            idle_pcb.state = READY;
-            setup_process_stack(&idle_pcb, idle_function);
-            idle_process = &idle_pcb;
-        }
-        processes[i].pid = i + 1;
-        processes[i].state = DEAD;
-        processes[i].argv = NULL;
-        processes[i].argc = 0;
-        processes[i].waitingPID = NONPID;
-    }
-    return 0;
-}
-
-int checkName(const char *name)
-{
-    return name != NULL && strlen(name) <= MAX_NAME_LENGTH;
-}
-
-/*
- * getFreeProcess
- * --------------
- * Qué hace:
- *  - Busca una entrada libre en la tabla `processes` (un proceso con estado
- *    DEAD) y devuelve su índice.
- * Uso:
- *  - Sin parámetros. Devuelve el índice del slot libre o -1 si no hay
- *    ninguno.
- */
-int getFreeProcess()
-{
-    for (int i = 0; i < MAX_PROCESSES; i++)
-    {
-        if (processes[i].state == DEAD)
-        {
-            return i;
-        }
-    }
-    return -1;
-}
-
+} 
 /*
  * createProcess
  * -------------
@@ -251,9 +189,8 @@ int getFreeProcess()
 PID createProcess(creationParameters *params)
 {
     if (params == NULL || !checkPriority(params->priority) || params->argc < 0 || params->entryPoint == NULL || !checkName(params->name) || current > MAX_PID)
-    {
         return -1;
-    }
+
     void *stackLimit = allocMemory(STACK_SIZE);
     char **args;
     if (stackLimit == NULL || (params->argc != 0 && (args = allocMemory(params->argc * sizeof(char *))) == NULL))
@@ -263,6 +200,9 @@ PID createProcess(creationParameters *params)
         return -1;
     }
 
+
+    //Para cada argumento, reserva memoria y copia el contenido. 
+    //Si alguna reserva falla, libera todo lo reservado y retorna -1.
     for (int i = 0; i < params->argc; i++)
     {
         int len = strlen(params->argv[i]);
@@ -286,35 +226,40 @@ PID createProcess(creationParameters *params)
     {
         freeMemory(stackLimit);
         for (int i = 0; i < params->argc; i++)
-        {
             freeMemory(args[i]);
-        }
+
         freeMemory(args);
         return -1;
     }
 
     memcpy(processes[allocatedProcess].name, params->name, strlen(params->name) + 1);
-    processes[allocatedProcess].parentpid = (currentProcess = getCurrentProcess()) == NULL ? 0 : currentProcess->pid;
-    processes[allocatedProcess].waitingPID = NONPID;
+    //processes[allocatedProcess].parentpid = (currentProcess = getCurrentProcess()) == NULL ? 0 : currentProcess->pid;
+    //processes[allocatedProcess].waitingPID = NONPID;
+
     processes[allocatedProcess].argc = params->argc;
     processes[allocatedProcess].argv = args;
     processes[allocatedProcess].priority = params->priority;
     processes[allocatedProcess].entryPoint = params->entryPoint;
     processes[allocatedProcess].foreground = params->foreground;
     processes[allocatedProcess].state = READY;
-    processes[allocatedProcess].stackBase = stackLimit + STACK_SIZE;
-    processes[allocatedProcess].stackEnd = setupStack(params->argc, args, params->entryPoint, processes[allocatedProcess].stackBase, (entryPoint)processLoader);
-    memcpy(processes[allocatedProcess].fds, params->fds, sizeof(int) * 2);
+    processes[allocatedProcess].stackBase = stackLimit + STACK_SIZE;// donde aputa rsp
 
-    schedule(&(processes[allocatedProcess]));
+    //lo mando a asm
+    processes[allocatedProcess].stackEnd = setupStack(params->argc, args, params->entryPoint, processes[allocatedProcess].stackBase, (entryPoint)processLoader);
+//rdi = argc , rsi = argv , rdx = entryPoint, 
+
+
+    //memcpy(processes[allocatedProcess].fds, params->fds, sizeof(int) * 2);
+    schedule(&(processes[allocatedProcess])); // agrego a la cola el proceso creado
     return processes[allocatedProcess].pid;
 }
+
 
 /*
  * getProcessesCount
  * -----------------
  * Qué hace:
- *  - Cuenta cuántos procesos hay activos (estado distinto de DEAD) en la
+ *  - Cuenta cuántos procesos hay activos (estado distinto de EXITED) en la
  *    tabla `processes`.
  * Uso:
  *  - Sin parámetros. Devuelve el número de procesos activos.
@@ -324,7 +269,7 @@ int getProcessesCount()
     int count = 0;
     for (int i = 0; i < MAX_PROCESSES; i++)
     {
-        if (processes[i].state != DEAD)
+        if (processes[i].state != EXITED)
         {
             count++;
         }
@@ -353,28 +298,42 @@ PID getpid(void)
  * Uso:
  *  - Sin parámetros. Devuelve el PID del proceso padre.
  */
-PID getppid(void)
-{
-    return getCurrentProcess()->parentpid;
-}
+// PID getppid(void)
+// {
+//     return getCurrentProcess()->parentpid;
+// }
 
 /*
  * getProcess
  * ----------
  * Qué hace:
  *  - Devuelve un puntero a la estructura `Process` correspondiente al PID
- *    proporcionado si está activa (no DEAD), o NULL en caso contrario.
+ *    proporcionado si está activa (no EXITED), o NULL en caso contrario.
  * Uso:
  *  - Parámetro: `PID pid`.
  *  - Devuelve: `Process*` o NULL.
  */
 Process *getProcess(PID pid)
 {
-    if (processes[pid - 1].state != DEAD)
+    if (processes[pid - 1].state != EXITED)
     {
         return &processes[pid - 1];
     }
     return NULL;
+}
+
+/*
+ * checkPriority
+ * -------------
+ * Qué hace:
+ *  - Valida que una prioridad esté dentro del rango permitido.
+ * Uso:
+ *  - Parámetro: `Priority priority`.
+ *  - Devuelve 1 si la prioridad es válida, 0 si no lo es.
+ */
+int checkPriority(Priority priority)
+{
+    return priority >= MIN_PRIORITY && priority <= MAX_PRIORITY;
 }
 
 /*
@@ -388,21 +347,21 @@ Process *getProcess(PID pid)
  *  - Sin parámetros. Devuelve `Process*` a la copia. El llamador es
  *    responsable de liberar la memoria usando `freeProcessesInformation`.
  */
-Process *getProcessesInformation()
-{
-    int count = getProcessesCount(), ansIndex = 0;
-    Process *ans = allocMemory((count + 1) * sizeof(Process));
-    ans[count].pid = NONPID;
+// Process *getProcessesInformation()
+// {
+//     int count = getProcessesCount(), ansIndex = 0;
+//     Process *ans = allocMemory((count + 1) * sizeof(Process));
+//     ans[count].pid = NONPID;
 
-    for (int i = 0; i < MAX_PROCESSES && ansIndex != count; i++)
-    {
-        if (processes[i].state != DEAD)
-        {
-            memcpy(&(ans[ansIndex++]), &(processes[i]), sizeof(Process));
-        }
-    }
-    return ans;
-}
+//     for (int i = 0; i < MAX_PROCESSES && ansIndex != count; i++)
+//     {
+//         if (processes[i].state != EXITED)
+//         {
+//             memcpy(&(ans[ansIndex++]), &(processes[i]), sizeof(Process));
+//         }
+//     }
+//     return ans;
+// }
 
 /*
  * freeProcessesInformation
@@ -413,46 +372,45 @@ Process *getProcessesInformation()
  *  - Parámetro: `Process *processesInfo` devuelto por
  *    `getProcessesInformation`.
  */
-void freeProcessesInformation(Process *processesInfo)
-{
-    freeMemory(processesInfo);
-}
-
-// int kill(PID pid)
+// void freeProcessesInformation(Process *processesInfo)
 // {
-
-//     if (pid <= INITPID || pid > MAX_PID)
-//         return -1;
-//     Process *pcb = &processes[pid - 1];
-//     if (pcb->state == DEAD)
-//     {
-//         return -1;
-//     }
-
-//     freeMemory(((void *)pcb->stackBase - STACK_SIZE));
-//     if (pcb->argc > 0)
-//     {
-//         for (int i = 0; i < pcb->argc; i++)
-//         {
-//             freeMemory(pcb->argv[i]);
-//         }
-//         freeMemory(pcb->argv);
-//     }
-//     pcb->state = DEAD;
-//     pcb->argv = NULL;
-//     pcb->argc = 0;
-//     closeFD(pcb->fds[0]);
-//     closeFD(pcb->fds[1]);
-//     garbageCollect();
-
-//     unblockWaitingProcesses(pid, 0);
-
-//     if (getCurrentProcess()->pid == pid)
-//     {
-//         forceSwitchContent();
-//     }
-//     return 0;
+//     freeMemory(processesInfo);
 // }
+
+int kill(PID pid)
+{
+    if (pid <= INITPID || pid > MAX_PID)
+        return -1;
+    Process *pcb = &processes[pid - 1];
+    if (pcb->state == EXITED)
+    {
+        return -1;
+    }
+
+    freeMemory(((void *)pcb->stackBase - STACK_SIZE));
+    if (pcb->argc > 0)
+    {
+        for (int i = 0; i < pcb->argc; i++)
+        {
+            freeMemory(pcb->argv[i]);
+        }
+        freeMemory(pcb->argv);
+    }
+    pcb->state = EXITED;
+    pcb->argv = NULL;
+    pcb->argc = 0;
+   // closeFD(pcb->fds[0]);
+   // closeFD(pcb->fds[1]);
+    garbageCollect();
+
+   // unblockWaitingProcesses(pid, 0);
+
+    if (getCurrentProcess()->pid == pid)
+    {
+        forceSwitchContext();
+    }
+    return 0;
+}
 
 // int killAllChildren(PID pid)
 // {
@@ -461,7 +419,7 @@ void freeProcessesInformation(Process *processesInfo)
 
 //     for (int i = 0; i < MAX_PROCESSES; i++)
 //     {
-//         if (processes[i].parentpid == pid && processes[i].state != DEAD)
+//         if (processes[i].parentpid == pid && processes[i].state != EXITED)
 //         {
 //             kill(processes[i].pid);
 //         }
@@ -507,7 +465,7 @@ void freeProcessesInformation(Process *processesInfo)
 // Process*  getTerminalForegroundProcess(){
 //     for(int i = 0;i < MAX_PROCESSES; i++)
 //     {
-//         if (processes[i].foreground && processes[i].state != DEAD && processes[i].pid != INITPID && processes[i].pid != SHELLPID)
+//         if (processes[i].foreground && processes[i].state != EXITED && processes[i].pid != INITPID && processes[i].pid != SHELLPID)
 //         {
 //             return & processes[i];
 //         }
@@ -515,16 +473,3 @@ void freeProcessesInformation(Process *processesInfo)
 //     return NULL;
 // }
 
-// /*
-//  * checkPriority
-//  * -------------
-//  * Qué hace:
-//  *  - Valida que una prioridad esté dentro del rango permitido.
-//  * Uso:
-//  *  - Parámetro: `Priority priority`.
-//  *  - Devuelve 1 si la prioridad es válida, 0 si no lo es.
-//  */
-// int checkPriority(Priority priority)
-// {
-//     return priority >= MIN_PRIORITY && priority <= MAX_PRIORITY;
-// }
