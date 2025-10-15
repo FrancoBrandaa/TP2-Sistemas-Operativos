@@ -18,8 +18,8 @@
 #define TAB_SIZE 4
 
 void putChar(char ascii);
-void print(const char * string);
-int32_t printToFd(int32_t fd, const char * string, int32_t count);
+void print(const char *string);
+int32_t printToFd(int32_t fd, const char *string, int32_t count);
 void newLine();
 void printDec(uint64_t value);
 void printHex(uint64_t value);
@@ -31,7 +31,10 @@ void hideCursor(void);
 void retractPosition();
 void clearPreviousCharacter(void);
 uint16_t getXBufferPosition(void);
-static inline int64_t strlen(const char * str);
+// Note: fonts.c provides its own internal static strlen implementation.
+// Do NOT declare 'strlen' here to avoid conflicts with the standard library's
+// strlen (which returns size_t). The internal implementation in fonts.c is
+// static and local to that translation unit.
 
 uint8_t increaseFontSize(void);
 uint8_t decreaseFontSize(void);

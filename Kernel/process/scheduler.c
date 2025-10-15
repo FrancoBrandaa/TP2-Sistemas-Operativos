@@ -124,7 +124,7 @@ uint64_t *switchContext(uint64_t *rsp)
             return rsp;
         }
         currentProcess->stackEnd = rsp;
-        schedule(currentProcess);  //a la cola bro
+        schedule(currentProcess); // a la cola bro
         currentProcess->state = READY;
     }
     if (currentProcess->state == BLOCKED)
@@ -190,4 +190,14 @@ void clearYield()
 char getYield()
 {
     return isYield;
+}
+
+// Explicitly yield the CPU from the running process.
+// Contracts:
+// - Sets the yield flag and returns 1 so callers can branch if needed.
+// - Next timer interrupt/scheduler cycle will switch context.
+int yield()
+{
+    setYield();
+    return 1;
 }

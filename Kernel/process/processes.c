@@ -6,9 +6,9 @@
 #include <interrupts.h>
 #include <scheduler.h>
 #include <video.h>
-#include <string.h>
+#include <lib.h>
 
-//#include <fileDescriptors.h>
+// #include <fileDescriptors.h>
 
 #define SHELLPID 2
 
@@ -87,8 +87,6 @@ int isValidPID(PID pid)
 //         *wstatus = currentProcess->childReturnValue;
 // }
 
-
-
 /*
  * initProcesses
  * -------------
@@ -109,7 +107,7 @@ PID initProcesses(void)
         processes[i].state = EXITED;
         processes[i].argv = NULL;
         processes[i].argc = 0;
-        //processes[i].waitingPID = NONPID;
+        // processes[i].waitingPID = NONPID;
     }
     return 0;
 }
@@ -138,7 +136,7 @@ int getFreeProcess()
             return i;
         }
     }
-    return -1;  
+    return -1;
 }
 /*
  * processLoader
@@ -155,17 +153,17 @@ int getFreeProcess()
  *  - Se espera que `entry` sea la función principal del proceso (tipo
  *    `entryPoint`). Esta función no debe llamarse manualmente desde fuera
  *    del subsistema de procesos; se usa al crear y arrancar procesos.
- * 
+ *
  * VER DE MEJORAR EL ESTILO REMOVIENDO ESTA FUNCION
  */
 int processLoader(int argc, char *argv[], entryPoint entry)
 {
     int returnValue = entry(argc, argv);
     PID processPid = getpid();
-    //unblockWaitingProcesses(processPid, returnValue);
+    // unblockWaitingProcesses(processPid, returnValue);
     kill(processPid);
     return returnValue;
-} 
+}
 /*
  * createProcess
  * -------------
@@ -200,9 +198,8 @@ PID createProcess(creationParameters *params)
         return -1;
     }
 
-
-    //Para cada argumento, reserva memoria y copia el contenido. 
-    //Si alguna reserva falla, libera todo lo reservado y retorna -1.
+    // Para cada argumento, reserva memoria y copia el contenido.
+    // Si alguna reserva falla, libera todo lo reservado y retorna -1.
     for (int i = 0; i < params->argc; i++)
     {
         int len = strlen(params->argv[i]);
@@ -233,8 +230,8 @@ PID createProcess(creationParameters *params)
     }
 
     memcpy(processes[allocatedProcess].name, params->name, strlen(params->name) + 1);
-    //processes[allocatedProcess].parentpid = (currentProcess = getCurrentProcess()) == NULL ? 0 : currentProcess->pid;
-    //processes[allocatedProcess].waitingPID = NONPID;
+    // processes[allocatedProcess].parentpid = (currentProcess = getCurrentProcess()) == NULL ? 0 : currentProcess->pid;
+    // processes[allocatedProcess].waitingPID = NONPID;
 
     processes[allocatedProcess].argc = params->argc;
     processes[allocatedProcess].argv = args;
@@ -242,18 +239,16 @@ PID createProcess(creationParameters *params)
     processes[allocatedProcess].entryPoint = params->entryPoint;
     processes[allocatedProcess].foreground = params->foreground;
     processes[allocatedProcess].state = READY;
-    processes[allocatedProcess].stackBase = stackLimit + STACK_SIZE;// donde aputa rsp
+    processes[allocatedProcess].stackBase = stackLimit + STACK_SIZE; // donde aputa rsp
 
-    //lo mando a asm
+    // lo mando a asm
     processes[allocatedProcess].stackEnd = setupStack(params->argc, args, params->entryPoint, processes[allocatedProcess].stackBase, (entryPoint)processLoader);
-//rdi = argc , rsi = argv , rdx = entryPoint, 
+    // rdi = argc , rsi = argv , rdx = entryPoint,
 
-
-    //memcpy(processes[allocatedProcess].fds, params->fds, sizeof(int) * 2);
+    // memcpy(processes[allocatedProcess].fds, params->fds, sizeof(int) * 2);
     schedule(&(processes[allocatedProcess])); // agrego a la cola el proceso creado
     return processes[allocatedProcess].pid;
 }
-
 
 /*
  * getProcessesCount
@@ -399,11 +394,11 @@ int kill(PID pid)
     pcb->state = EXITED;
     pcb->argv = NULL;
     pcb->argc = 0;
-   // closeFD(pcb->fds[0]);
-   // closeFD(pcb->fds[1]);
+    // closeFD(pcb->fds[0]);
+    // closeFD(pcb->fds[1]);
     garbageCollect();
 
-   // unblockWaitingProcesses(pid, 0);
+    // unblockWaitingProcesses(pid, 0);
 
     if (getCurrentProcess()->pid == pid)
     {
@@ -472,4 +467,3 @@ int kill(PID pid)
 //     }
 //     return NULL;
 // }
-
