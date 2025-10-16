@@ -7,6 +7,7 @@
 #include <video.h>
 #include <time.h>
 #include <memoryManager.h>
+#include <process.h>
 
 extern int64_t register_snapshot[18];
 extern int64_t register_snapshot_taken;
@@ -85,6 +86,23 @@ int32_t syscallDispatcher(Registers *registers)
 		return (int64_t)sys_malloc(registers->rdi);
 	case 0x80000102:
 		return sys_free((void *)registers->rdi);
+
+	case 0x80000200:
+		return sys_create_process((const char *)registers->rdi,
+								  (int (*)(int, char **))registers->rsi,
+								  registers->rdx,
+								  (char **)registers->rcx,
+								  registers->r8,
+								  registers->r9);
+
+	case 0x80000201:
+		return sys_getpid();
+	case 0x80000202:
+		return sys_kill(registers->rdi);
+	case 0x80000203:
+		return sys_block(registers->rdi);
+	case 0x80000204:
+		return sys_unblock(registers->rdi);
 
 	default:
 		return 0;
@@ -309,3 +327,42 @@ int32_t sys_free(void *ptr)
 	freeMemory(ptr);
 	return 0;
 }
+
+// ==================================================================
+// Process management system calls
+// ==================================================================
+
+int32_t sys_create_process(const char *name, int (*entry)(int, char **), int argc, char **argv, int priority, int foreground)
+{
+	creationParameters params;
+	params.name = (char *)name;
+	params.entryPoint = entry;
+	params.argc = argc;
+	params.argv = argv;
+	params.priority = priority;
+	params.foreground = foreground;
+
+	return createProcess(&params);
+}
+
+int32_t sys_getpid(void)
+{
+	return getpid();
+}
+
+int32_t sys_kill(int32_t pid)
+{
+	return kill(pid);
+}
+
+int32_t sys_block(int32_t pid)
+{
+	return blockProcess(pid);
+}
+
+int32_t sys_unblock(int32_t pid)
+{
+	return unblockProcess(pid);
+}
+
+// ==================================================================

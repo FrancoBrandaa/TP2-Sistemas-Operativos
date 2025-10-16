@@ -7,7 +7,6 @@
 #define MIN_PRIORITY 1
 #define DEFAULT_PRIORITY MIN_PRIORITY
 #define MAX_PID MAX_PROCESSES
-#define NONPID -1
 #define INITPID 1
 
 #include "defs.h"
@@ -22,7 +21,7 @@ typedef struct
     Priority priority;
     entryPoint entryPoint;
     int foreground;
-    int fds[2];
+    //int fds[2];
 } creationParameters;
 
 typedef struct
@@ -37,7 +36,7 @@ typedef struct
     ProcessState state;
     uint64_t *stackBase, *stackEnd;
     int childReturnValue;
-    int fds[2]; // File descriptors
+    //int fds[2]; // File descriptors
 } Process;
 
 // typedef struct
@@ -65,7 +64,6 @@ typedef struct
 //     int childReturnValue;
 //     int fds[2]; // File descriptors
 // } Process;
-
 
 /*
  * Initializes the process management system.

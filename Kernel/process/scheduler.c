@@ -1,8 +1,3 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
-
 #include "../include/memoryManager.h"
 #include "../include/scheduler.h"
 #include "../include/syscallDispatcher.h"
@@ -65,7 +60,7 @@ void garbageCollect()
     } while (current != list.head);
 }
 
-void schedule(Process *pcb)
+void schedule(Process *pcb)// poner en la cola
 {
     Node *node = allocMemory(sizeof(Node));
     node->pcb = pcb;
@@ -84,7 +79,7 @@ void schedule(Process *pcb)
     }
 }
 
-Process *unschedule()
+Process *unschedule()// sacar de la cola
 {
     if (list.head == NULL)
     {

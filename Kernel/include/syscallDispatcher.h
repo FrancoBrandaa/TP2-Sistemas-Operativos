@@ -74,4 +74,13 @@ int32_t sys_get_mem_status(MemoryStatus *memStatus);
 void *sys_malloc(int size);
 int32_t sys_free(void *ptr);
 
+// Process management syscall prototypes
+int32_t sys_create_process(const char *name, int (*entry)(int, char **), int argc, char **argv, int priority, int foreground);
+int32_t sys_getpid(void);
+int32_t sys_kill(int32_t pid);
+int32_t sys_block(int32_t pid);
+int32_t sys_unblock(int32_t pid);
+
+PID sys_getProcesspid();
+
 #endif

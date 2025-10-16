@@ -2,11 +2,11 @@
 #define _LIBC_SYSCALLS_H_
 
 #include <stdint.h>
-#include <sys.h>
+#include <libsys.h>
 
 // Linux syscall prototypes
-int32_t sys_write(int64_t fd, const void * buf, int64_t count);
-int32_t sys_read(int64_t fd, void * buf, int64_t count);
+int32_t sys_write(int64_t fd, const void *buf, int64_t count);
+int32_t sys_read(int64_t fd, void *buf, int64_t count);
 
 // Custom syscall prototypes
 /* 0x80000000 */
@@ -30,11 +30,11 @@ int32_t sys_clear_input_buffer(void);
 
 // Date syscall prototypes
 /* 0x80000010 */
-int32_t sys_hour(int * hour);
+int32_t sys_hour(int *hour);
 /* 0x80000011 */
-int32_t sys_minute(int * minute);
+int32_t sys_minute(int *minute);
 /* 0x80000012 */
-int32_t sys_second(int * second);
+int32_t sys_second(int *second);
 
 int32_t sys_circle(int color, long long int topleftX, long long int topLefyY, long long int diameter);
 
@@ -52,7 +52,7 @@ int32_t sys_window_height(void);
 
 int32_t sys_sleep_milis(uint32_t milis);
 
-int32_t sys_get_register_snapshot(int64_t * registers);
+int32_t sys_get_register_snapshot(int64_t *registers);
 
 int32_t sys_get_character_without_display(void);
 
@@ -64,6 +64,16 @@ void *sys_malloc(int size);
 /* 0x80000102 */
 int32_t sys_free(void *ptr);
 
-
+/* Process management syscalls */
+/* 0x80000200 */
+int32_t sys_create_process(const char *name, int (*entryPoint)(int, char **), int argc, char **argv, int priority, int foreground);
+/* 0x80000201 */
+int32_t sys_getpid(void);
+/* 0x80000202 */
+int32_t sys_kill(int32_t pid);
+/* 0x80000203 */
+int32_t sys_block(int32_t pid);
+/* 0x80000204 */
+int32_t sys_unblock(int32_t pid);
 
 #endif

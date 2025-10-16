@@ -50,22 +50,35 @@ void strncpy(char * dest, char * src, int n) {
     dest[i] = 0;
 }
 
-char * strtok(char * s1, const char * s2) {
+// Divide el string s1 en tokens, usando los caracteres en s2 como delimitadores.
+//s1 = str: El string a dividir (o NULL para continuar)
+//s2 = delim: Los caracteres delimitadores (ej: " ", ",", etc.)
+//Return: Puntero al siguiente token, o NULL si no hay más
+char * strtok(char * s1, const char * s2) 
+{
     static char * last;
 
-    if (s1 != NULL) {
+    if (s1 != NULL) 
+    {
         last = s1;
-    } else {
-        if (*last == 0) {
+    } 
+    
+    else 
+    {
+        if (*last == 0) 
+        {
             return NULL;
         }
         s1 = last;
     }
 
-    while (*last != 0) {
+    while (*last != 0) 
+    {
         int i = 0;
-        while (s2[i] != 0) {
-            if (*last == s2[i]) {
+        while (s2[i] != 0) 
+        {
+            if (*last == s2[i]) 
+            {
                 *last = 0;
                 last++;
                 return s1;

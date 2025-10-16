@@ -7,6 +7,10 @@
 #include <syscallDispatcher.h>
 #include <sound.h>
 #include <memoryManager.h>
+#include <process.h>
+#include <scheduler.h>
+#include <interrupts.h>
+
 
 // extern uint8_t text;
 // extern uint8_t rodata;
@@ -51,6 +55,15 @@ void *initializeKernelBinary()
 	return getStackBase();
 }
 
+void process_idle()
+{
+	while (1)
+	{
+		_hlt();
+		//print("estoy en idle juju");
+	}
+}
+
 int main()
 {
 	load_idt();
@@ -58,14 +71,32 @@ int main()
 	createMemoryManager(memoryStart, memorySize);
 
 	setFontSize(2);
+	initProcesses();
+	
+	// habilitamos las interrupciones
+	_sti();
 
-	// while (1)
-	// {
-	// 	print("Kernel is running...\n");
-	// }
-	((EntryPoint)shellModuleAddress)();
+	creationParameters params;
+	params.name = "init";
+	params.argc = 0;
+	params.argv = NULL;
+	params.priority = DEFAULT_PRIORITY;
+	params.entryPoint = (entryPoint)&process_idle;
+	params.foreground = 0;
+	createProcess(&params);
 
-	__builtin_unreachable();
 
+	params.name = "shell";
+	params.entryPoint = (entryPoint)shellModuleAddress;
+	params.foreground = 1;
+	params.argc = 0;
+	params.argv = NULL;
+	params.priority = DEFAULT_PRIORITY;
+	createProcess(&params);
+
+	// inicializamos el scheduler 
+	initScheduler();
+	forceSwitchContext(); //para que arranque el primer proceso, no dependo del timer.
+	
 	return 0;
 }

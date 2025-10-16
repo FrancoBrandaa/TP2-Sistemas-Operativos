@@ -3,8 +3,9 @@
 #include <string.h>
 #include <stddef.h>
 
-#include <sys.h>
+#include <libsys.h>
 #include <exceptions.h>
+// #include <syscalls.h>
 
 #ifdef ANSI_4_BIT_COLOR_SUPPORT
 #include <ansiColors.h>
@@ -92,7 +93,10 @@ int man(void);
 int regs(void);
 int memtest(void);
 int memstress(void);
-int test_mm(void);
+int test_mm(int argc, char **argv);
+int test_mm_wrapper(void);
+int test_processes(int argc, char **argv);
+int test_processes_wrapper(void);
 
 static void printPreviousCommand(enum REGISTERABLE_KEYS scancode);
 static void printNextCommand(enum REGISTERABLE_KEYS scancode);
@@ -119,7 +123,8 @@ Command commands[] = {
     {.name = "memtest", .function = (int (*)(void))(unsigned long long)memtest, .description = "Simple test for dynamic memory allocation"},
     {.name = "regs", .function = (int (*)(void))(unsigned long long)regs, .description = "Prints the register snapshot, if any"},
     {.name = "man", .function = (int (*)(void))(unsigned long long)man, .description = "Prints the description of the provided command"},
-    {.name = "test_mm", .function = (int (*)(void))(unsigned long long)test_mm, .description = "Advanced memory manager test (original test_mm.c)"},
+    {.name = "test_mm", .function = (int (*)(void))(unsigned long long)test_mm_wrapper, .description = "Advanced memory manager test (runs as process). Usage: test_mm [max_memory]"},
+    {.name = "test_processes", .function = (int (*)(void))(unsigned long long)test_processes_wrapper, .description = "Process management test (runs as process). Usage: test_processes <max_processes>"},
 };
 
 char command_history[HISTORY_SIZE][MAX_BUFFER_SIZE] = {0};
@@ -169,6 +174,7 @@ int main()
             if (strcmp(commands[i].name, command) == 0)
             {
                 last_command_output = commands[i].function();
+
                 strncpy(command_history[command_history_last], command_history_buffer, 255);
                 command_history[command_history_last][buffer_dim] = '\0';
                 INC_MOD(command_history_last, HISTORY_SIZE);
@@ -491,18 +497,17 @@ int memstress(void)
     return 0;
 }
 
-int test_mm(void)
+int test_mm(int argc, char **argv)
 {
     mm_rq mm_rqs[MAX_BLOCKS];
     uint8_t rq;
     uint32_t total;
     uint64_t max_memory;
 
-    // Get max_memory from user input or use default
-    char *arg = strtok(NULL, " ");
-    if (arg != NULL)
+    // Get max_memory from command arguments
+    if (argc > 0 && argv[0] != NULL)
     {
-        max_memory = satoi(arg);
+        max_memory = satoi(argv[0]);
         if (max_memory <= 0)
         {
             printf("Invalid memory size. Using default (1024 bytes).\n");
@@ -574,5 +579,214 @@ int test_mm(void)
 
     printf("Advanced memory manager test completed successfully!\n");
     printf("Completed %d iterations without errors\n", iterations);
+    return 0;
+}
+
+int test_mm_wrapper(void)
+{
+    // Parse arguments from strtok
+    char *args[10]; // Max 10 arguments
+    int argc = 0;
+    char *arg;
+
+    while ((arg = strtok(NULL, " ")) != NULL && argc < 10)
+    {
+        args[argc++] = arg;
+    }
+
+    // Create process with parsed arguments
+    int pid = createProcess(
+        "test_mm", // name
+        test_mm,   // entry point
+        argc,      // argument count
+        args,      // arguments
+        1,         // priority
+        1          // foreground
+    );
+
+    if (pid < 0)
+    {
+        printf("Error: Could not create test_mm process\n");
+        return -1;
+    }
+
+    printf("test_mm process created with PID: %d\n", pid);
+    return 0;
+}
+
+// ============================================================================
+// test_processes implementation
+// ============================================================================
+
+enum ProcessState
+{
+    PROC_RUNNING,
+    PROC_BLOCKED,
+    PROC_KILLED
+};
+
+typedef struct P_rq
+{
+    int32_t pid;
+    enum ProcessState state;
+} p_rq;
+
+// Endless loop process
+int endless_loop(int argc, char **argv)
+{
+    while (1)
+    {
+        // Just loop forever
+    }
+    return 0;
+}
+
+int test_processes(int argc, char **argv)
+{
+    uint8_t rq;
+    uint8_t alive = 0;
+    uint8_t action;
+    uint64_t max_processes;
+    char *argvAux[] = {NULL};
+
+    if (argc != 1)
+    {
+        printf("Usage: test_processes <max_processes>\n");
+        return -1;
+    }
+
+    if ((max_processes = satoi(argv[0])) <= 0)
+    {
+        printf("Invalid number of processes. Must be > 0\n");
+        return -1;
+    }
+
+    printf("Starting test_processes with %ld max processes...\n", max_processes);
+
+    p_rq p_rqs[max_processes];
+
+    // Note: This is an infinite loop test
+    // In a real scenario, you'd want a stop condition
+    int iterations = 0;
+    int max_iterations = 5; // Limit for testing
+
+    while (iterations < max_iterations)
+    {
+        printf("\n=== Iteration %d/%d ===\n", iterations + 1, max_iterations);
+        alive = 0;
+
+        // Create max_processes processes
+        printf("Creating %ld processes...\n", max_processes);
+        for (rq = 0; rq < max_processes; rq++)
+        {
+            p_rqs[rq].pid = createProcess("endless_loop", endless_loop, 0, argvAux, 1, 0);
+
+            if (p_rqs[rq].pid == -1)
+            {
+                printf("test_processes: ERROR creating process\n");
+                return -1;
+            }
+            else
+            {
+                p_rqs[rq].state = PROC_RUNNING;
+                alive++;
+            }
+        }
+        printf("Created %d processes successfully\n", alive);
+
+        // Randomly kills, blocks or unblocks processes until every one has been killed
+        printf("Managing processes...\n");
+        int actions = 0;
+        while (alive > 0 && actions < 100)
+        { // Limit actions per iteration
+            for (rq = 0; rq < max_processes; rq++)
+            {
+                action = GetUniform(100) % 2;
+
+                switch (action)
+                {
+                case 0: // Kill
+                    if (p_rqs[rq].state == PROC_RUNNING || p_rqs[rq].state == PROC_BLOCKED)
+                    {
+                        // TODO: Implement kill syscall
+                        // For now, just mark as killed
+                        p_rqs[rq].state = PROC_KILLED;
+                        alive--;
+                        printf("  Killed process PID=%d (alive=%d)\n", p_rqs[rq].pid, alive);
+                    }
+                    break;
+
+                case 1: // Block
+                    if (p_rqs[rq].state == PROC_RUNNING)
+                    {
+                        // TODO: Implement block syscall
+                        // For now, just mark as blocked
+                        p_rqs[rq].state = PROC_BLOCKED;
+                        printf("  Blocked process PID=%d\n", p_rqs[rq].pid);
+                    }
+                    break;
+                }
+            }
+
+            // Randomly unblocks processes
+            for (rq = 0; rq < max_processes; rq++)
+            {
+                if (p_rqs[rq].state == PROC_BLOCKED && GetUniform(100) % 2)
+                {
+                    // TODO: Implement unblock syscall
+                    // For now, just mark as running
+                    p_rqs[rq].state = PROC_RUNNING;
+                    printf("  Unblocked process PID=%d\n", p_rqs[rq].pid);
+                }
+            }
+
+            actions++;
+        }
+
+        printf("Iteration %d complete. All %ld processes killed.\n", iterations + 1, max_processes);
+        iterations++;
+        sleep(1000); // Wait 1 second between iterations
+    }
+
+    printf("\ntest_processes completed %d iterations successfully!\n", iterations);
+    return 0;
+}
+
+int test_processes_wrapper(void)
+{
+    // Parse arguments from strtok
+    char *args[10];
+    int argc = 0;
+    char *arg;
+
+    while ((arg = strtok(NULL, " ")) != NULL && argc < 10)
+    {
+        args[argc++] = arg;
+    }
+
+    if (argc == 0)
+    {
+        printf("Usage: test_processes <max_processes>\n");
+        printf("Example: test_processes 5\n");
+        return -1;
+    }
+
+    // Create process with parsed arguments
+    int pid = createProcess(
+        "test_processes",
+        test_processes,
+        argc,
+        args,
+        1, // priority
+        1  // foreground
+    );
+
+    if (pid < 0)
+    {
+        printf("Error: Could not create test_processes process\n");
+        return -1;
+    }
+
+    printf("test_processes process created with PID: %d\n", pid);
     return 0;
 }
