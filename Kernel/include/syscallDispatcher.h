@@ -80,6 +80,9 @@ int32_t sys_getpid(void);
 int32_t sys_kill(int32_t pid);
 int32_t sys_block(int32_t pid);
 int32_t sys_unblock(int32_t pid);
+void *sys_ps(void);
+int32_t sys_change_priority(int32_t pid, int32_t priority);
+int32_t sys_yield(void);
 
 PID sys_getProcesspid();
 

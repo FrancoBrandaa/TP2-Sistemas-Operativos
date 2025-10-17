@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
-
+#include "libsys.h"
+#include "test_util.h"
 
 // Random
 static uint32_t m_z = 362436069;
@@ -64,11 +65,10 @@ void endless_loop() {
     ;
 }
 
-// void endless_loop_print(uint64_t wait) {
-//   int64_t pid = my_getpid();
-
-//   while (1) {
-//     printf("%d ", pid);
-//     bussy_wait(wait);
-//   }
-// }
+void endless_loop_print(uint64_t wait) {
+  int64_t pid = getpid();
+  while (1) {
+    printf("%d ", pid);
+    bussy_wait(wait);
+  }
+}

@@ -7,7 +7,6 @@
 #include <scheduler.h>
 #include <video.h>
 #include <lib.h>
-
 // #include <fileDescriptors.h>
 
 #define SHELLPID 2
@@ -31,61 +30,7 @@ int isValidPID(PID pid)
     return pid > 0 && pid <= MAX_PID && processes[pid - 1].state != EXITED;
 }
 
-/*
- * unblockWaitingProcesses
- * -----------------------
- * Qué hace:
- *  - Recorre la tabla de procesos y desbloquea (llama a `unblockProcess`)
- *    aquellos procesos que estaban bloqueados esperando a que el proceso
- *    con PID == `pid` terminase. También escribe el valor de retorno del
- *    hijo en `childReturnValue`.
- * Uso:
- *  - Parámetros: `PID pid` (PID terminado), `int returnValue` (valor de
- *    retorno del proceso terminado).
- *  - No devuelve valor.
- * Efectos secundarios:
- *  - Modifica `waitingPID` y `childReturnValue` de procesos y cambia su
- *    estado mediante `unblockProcess`.
- */
-// void unblockWaitingProcesses(PID pid, int returnValue)
-// {
-//     for (int i = 0; i < MAX_PROCESSES; i++)
-//     {
-//         if (processes[i].waitingPID == pid && processes[i].state == BLOCKED)
-//         {
-//             processes[i].waitingPID = NONPID;
-//             processes[i].childReturnValue = returnValue;
-//             unblockProcess(processes[i].pid);
-//         }
-//     }
-// }
 
-/*
- * waitProcess
- * -----------
- * Qué hace:
- *  - Hace que el proceso actual espere a que el proceso con PID `pidToWait`
- *    termine. El proceso actual se marca como esperando y se bloquea.
- * Uso:
- *  - Parámetros: `PID pidToWait` (PID del hijo a esperar), `int *wstatus`
- *    (puntero opcional donde se almacenará el valor de retorno del hijo).
- *  - No devuelve valor.
- * Notas/validaciones:
- *  - Si `pidToWait` no es válido, o coincide con el PID del proceso actual,
- *    la función no hace nada.
- */
-// void waitProcess(PID pidToWait, int *wstatus)
-// {
-//     Process *currentProcess = getCurrentProcess();
-//     if (!isValidPID(pidToWait) || currentProcess->pid == pidToWait || processes[pidToWait - 1].state == EXITED)
-//         return;
-
-//     currentProcess->waitingPID = pidToWait;
-//     blockProcess(currentProcess->pid);
-
-//     if (wstatus != NULL)
-//         *wstatus = currentProcess->childReturnValue;
-// }
 
 /*
  * initProcesses
@@ -285,18 +230,7 @@ PID getpid(void)
     return getCurrentProcess()->pid;
 }
 
-/*
- * getppid
- * -------
- * Qué hace:
- *  - Devuelve el PID del padre (`parentpid`) del proceso actual.
- * Uso:
- *  - Sin parámetros. Devuelve el PID del proceso padre.
- */
-// PID getppid(void)
-// {
-//     return getCurrentProcess()->parentpid;
-// }
+
 
 /*
  * getProcess
@@ -342,21 +276,21 @@ int checkPriority(Priority priority)
  *  - Sin parámetros. Devuelve `Process*` a la copia. El llamador es
  *    responsable de liberar la memoria usando `freeProcessesInformation`.
  */
-// Process *getProcessesInformation()
-// {
-//     int count = getProcessesCount(), ansIndex = 0;
-//     Process *ans = allocMemory((count + 1) * sizeof(Process));
-//     ans[count].pid = NONPID;
+Process *getProcessesInformation()
+{
+    int count = getProcessesCount(), ansIndex = 0;
+    Process *ans = allocMemory((count + 1) * sizeof(Process));
+    ans[count].pid = NONPID; // no se si lo vamos a usar :) por las dudas
 
-//     for (int i = 0; i < MAX_PROCESSES && ansIndex != count; i++)
-//     {
-//         if (processes[i].state != EXITED)
-//         {
-//             memcpy(&(ans[ansIndex++]), &(processes[i]), sizeof(Process));
-//         }
-//     }
-//     return ans;
-// }
+    for (int i = 0; i < MAX_PROCESSES && ansIndex != count; i++)
+    {
+        if (processes[i].state != EXITED)
+        {
+            memcpy(&(ans[ansIndex++]), &(processes[i]), sizeof(Process));
+        }
+    }
+    return ans;
+}
 
 /*
  * freeProcessesInformation
@@ -367,10 +301,10 @@ int checkPriority(Priority priority)
  *  - Parámetro: `Process *processesInfo` devuelto por
  *    `getProcessesInformation`.
  */
-// void freeProcessesInformation(Process *processesInfo)
-// {
-//     freeMemory(processesInfo);
-// }
+void freeProcessesInformation(Process *processesInfo)
+{
+    freeMemory(processesInfo);
+}
 
 int kill(PID pid)
 {
@@ -407,30 +341,19 @@ int kill(PID pid)
     return 0;
 }
 
-// int killAllChildren(PID pid)
-// {
-//     if (pid <= INITPID || pid > MAX_PID)
-//         return -1;
+int changeProccessPriority(PID pid, Priority priority)
+{
+    if (!isValidPID(pid) || !checkPriority(priority))
+    {
+        return -1;
+    }
+    processes[pid - 1].priority = priority;
+    return 0;
+}
 
-//     for (int i = 0; i < MAX_PROCESSES; i++)
-//     {
-//         if (processes[i].parentpid == pid && processes[i].state != EXITED)
-//         {
-//             kill(processes[i].pid);
-//         }
-//     }
-//     return 0;
-// }
 
-// int changeProccessPriority(PID pid, Priority priority)
-// {
-//     if (!isValidPID(pid) || !checkPriority(priority))
-//     {
-//         return -1;
-//     }
-//     processes[pid - 1].priority = priority;
-//     return 0;
-// }
+
+
 
 // int getFileDescriptors(int *fds){
 

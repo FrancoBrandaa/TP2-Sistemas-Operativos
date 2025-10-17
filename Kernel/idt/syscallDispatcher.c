@@ -8,6 +8,7 @@
 #include <time.h>
 #include <memoryManager.h>
 #include <process.h>
+#include <scheduler.h>
 
 extern int64_t register_snapshot[18];
 extern int64_t register_snapshot_taken;
@@ -103,6 +104,12 @@ int32_t syscallDispatcher(Registers *registers)
 		return sys_block(registers->rdi);
 	case 0x80000204:
 		return sys_unblock(registers->rdi);
+	case 0x80000205:
+		return (int64_t)sys_ps();
+	case 0x80000206:
+		return sys_change_priority(registers->rdi, registers->rsi);
+	case 0x80000207:
+		return sys_yield();
 
 	default:
 		return 0;
@@ -363,6 +370,22 @@ int32_t sys_block(int32_t pid)
 int32_t sys_unblock(int32_t pid)
 {
 	return unblockProcess(pid);
+}
+
+void *sys_ps(void)
+{
+	return getProcessesInformation();
+}
+
+int32_t sys_change_priority(int32_t pid, int32_t priority)
+{
+	return changeProccessPriority(pid, priority);
+}
+
+int32_t sys_yield(void)
+{
+	yield();
+	return 0;
 }
 
 // ==================================================================

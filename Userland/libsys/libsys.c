@@ -145,4 +145,18 @@ int32_t unblock(int32_t pid)
     return sys_unblock(pid);
 }
 
-// int32_t sys_create_process(const char *name, int (*entryPoint)(int, char **), int argc, char **argv, int priority, int foreground)
+void *ps(void)
+{
+    return sys_ps();
+}
+
+int32_t changePriority(int32_t pid, int32_t priority)
+{
+    return sys_change_priority(pid, priority);
+}
+
+int32_t yield(void)
+{
+    return sys_yield();
+}
+

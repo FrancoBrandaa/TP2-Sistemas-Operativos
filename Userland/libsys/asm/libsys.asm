@@ -38,6 +38,9 @@ GLOBAL sys_getpid
 GLOBAL sys_kill
 GLOBAL sys_block
 GLOBAL sys_unblock
+GLOBAL sys_ps
+GLOBAL sys_change_priority
+GLOBAL sys_yield
 
 section .text
 
@@ -98,3 +101,6 @@ sys_getpid: sys_int80 0x80000201
 sys_kill: sys_int80 0x80000202
 sys_block: sys_int80 0x80000203
 sys_unblock: sys_int80 0x80000204
+sys_ps: sys_int80 0x80000205
+sys_change_priority: sys_int80 0x80000206
+sys_yield: sys_int80 0x80000207

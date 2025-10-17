@@ -75,5 +75,11 @@ int32_t sys_kill(int32_t pid);
 int32_t sys_block(int32_t pid);
 /* 0x80000204 */
 int32_t sys_unblock(int32_t pid);
+/* 0x80000205 */
+void *sys_ps(void);
+/* 0x80000206 */
+int32_t sys_change_priority(int32_t pid, int32_t priority);
+/* 0x80000207 */
+int32_t sys_yield(void);
 
 #endif

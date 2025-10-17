@@ -8,6 +8,7 @@
 #define DEFAULT_PRIORITY MIN_PRIORITY
 #define MAX_PID MAX_PROCESSES
 #define INITPID 1
+#define NONPID -1
 
 #include "defs.h"
 #include <stdint.h>

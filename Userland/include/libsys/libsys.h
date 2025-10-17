@@ -130,5 +130,8 @@ int32_t getpid(void);
 int32_t kill(int32_t pid);
 int32_t block(int32_t pid);
 int32_t unblock(int32_t pid);
+void *ps(void);
+int32_t changePriority(int32_t pid, int32_t priority);
+int32_t yield(void);
 
 #endif /* _LIBSYS_H_ */
