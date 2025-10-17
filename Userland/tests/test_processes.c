@@ -30,6 +30,8 @@ int64_t test_processes(uint64_t argc, char *argv[]) {
    
     // Create max_processes processes
     for (rq = 0; rq < max_processes; rq++) {
+
+      p_rqs[rq].pid = createProcess("endless_loop",endless_loop_print, 0, argvAux, 1, 0);
       if (p_rqs[rq].pid == -1) {
         printf("test_processes: ERROR creating process\n");
         return -1;
@@ -48,6 +50,7 @@ int64_t test_processes(uint64_t argc, char *argv[]) {
         switch (action) {
           case 0:
             if (p_rqs[rq].state == RUNNING || p_rqs[rq].state == BLOCKED) {
+               printf("kill(%d) ", p_rqs[rq].pid);
               if (kill(p_rqs[rq].pid) == -1) {
                 printf("test_processes: ERROR killing process\n");
                 return -1;

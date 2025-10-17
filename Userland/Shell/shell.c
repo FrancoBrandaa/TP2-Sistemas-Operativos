@@ -338,6 +338,7 @@ int test_processes_wrapper(void)
     printf("test_processes process created with PID: %d\n", pid);
     printf("The process is running in background. Use 'ps' to see all processes.\n");
     printf("Use 'kill %d' to stop the test if needed.\n", pid);
+    
     return 0;
 }
   
