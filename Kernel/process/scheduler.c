@@ -2,144 +2,104 @@
 #include "../include/scheduler.h"
 #include "../include/syscallDispatcher.h"
 #include "../include/video.h"
+#include "../include/queueADT.h"
 #include <interrupts.h>
+
 Quantum quantumsLeft = 0;
-List list;
 Process *currentProcess = NULL;
 char isYield = YIELD_NOT_DONE;
 
+// Priority-based scheduler: one queue per priority level
+queueADT priorityQueues[MAX_PRIORITY]; // Index 0 = priority 1, Index 4 = priority 5
+
 void initScheduler()
 {
-    currentProcess = list.head->pcb;
+    // Initialize all priority queues
+    for (int i = 0; i < MAX_PRIORITY; i++)
+    {
+        priorityQueues[i] = newQueue();
+    }
+    currentProcess = NULL;
 }
 
-void garbageCollect()
+void schedule(Process *pcb) // Add process to the appropriate priority queue
 {
-    if (list.head == NULL)
-        return;
-
-    Node *current = list.head;
-    Node *previous = list.tail;
-    Node *temp;
-
-    do
+    if (pcb == NULL || pcb->priority < MIN_PRIORITY || pcb->priority > MAX_PRIORITY)
     {
-        if (current->pcb->state == BLOCKED || current->pcb->state == EXITED)
+        return; // Invalid process or priority
+    }
+
+    // Add process to the queue corresponding to its priority
+    // priority 1 goes to index 0, priority 5 goes to index 4
+    int queueIndex = pcb->priority - 1;
+    queue(priorityQueues[queueIndex], (type)pcb);
+}
+
+Process *unschedule() // Get next process from highest priority queue
+{
+    // Search from highest priority (index MAX_PRIORITY-1) to lowest (index 0)
+    for (int i = MAX_PRIORITY - 1; i >= 0; i--)
+    {
+        if (!isEmpty(priorityQueues[i]))
         {
-            temp = current;
-
-            if (current == list.head)
-            {
-                list.head = list.head->next;
-                list.tail->next = list.head;
-            }
-            else
-            {
-                previous->next = current->next;
-                if (current == list.tail)
-                {
-                    list.tail = previous;
-                    list.tail->next = list.head;
-                }
-            }
-
-            current = current->next;
-            freeMemory(temp);
-
-            if (list.head == NULL)
-            {
-                list.tail = NULL;
-                break;
-            }
+            Process *pcb = (Process *)dequeue(priorityQueues[i]);
+            return pcb;
         }
-        else
-        {
-            previous = current;
-            current = current->next;
-        }
-    } while (current != list.head);
-}
-
-void schedule(Process *pcb)// poner en la cola
-{
-    Node *node = allocMemory(sizeof(Node));
-    node->pcb = pcb;
-
-    if (list.head == NULL)
-    {
-        list.head = node;
-        list.tail = node;
-        node->next = list.head;
     }
-    else
-    {
-        node->next = list.head;
-        list.tail->next = node;
-        list.tail = node;
-    }
-}
-
-Process *unschedule()// sacar de la cola
-{
-    if (list.head == NULL)
-    {
-        return NULL;
-    }
-
-    Process *pcb = list.head->pcb;
-
-    if (list.head == list.tail)
-    {
-        freeMemory(list.head);
-        list.head = NULL;
-        list.tail = NULL;
-    }
-    else
-    {
-        Node *temp = list.head;
-        list.head = list.head->next;
-        list.tail->next = list.head;
-        freeMemory(temp);
-    }
-    return pcb;
+    return NULL; // No ready processes
 }
 
 uint64_t *switchContext(uint64_t *rsp)
 {
     if (currentProcess == NULL)
     {
-        return rsp;
+        // First time: get initial process from queues
+        currentProcess = unschedule();
+        if (currentProcess == NULL)
+        {
+            return rsp; // No processes to run
+        }
+        quantumsLeft = currentProcess->priority - 1;
+        currentProcess->state = RUNNING;
+
+        return currentProcess->stackEnd;
     }
 
     if (currentProcess->state == RUNNING)
     {
+        // Check if process still has quantum left and hasn't yielded
         if (quantumsLeft > 0 && getYield() != YIELD_DONE)
         {
             (quantumsLeft)--;
-            return rsp;
+            return rsp; // Continue running current process
         }
+
+        // Process exhausted quantum or yielded
         currentProcess->stackEnd = rsp;
-        schedule(currentProcess); // a la cola bro
         currentProcess->state = READY;
+        schedule(currentProcess); // Put back in its priority queue
     }
-    if (currentProcess->state == BLOCKED)
+    else if (currentProcess->state == BLOCKED || currentProcess->state == EXITED)
     {
+        // Blocked or exited processes are NOT rescheduled
         quantumsLeft = 0;
         currentProcess->stackEnd = rsp;
     }
 
+    // Get next process from highest priority queue
     do
     {
-
         currentProcess = unschedule();
         if (currentProcess == NULL)
         {
-            return rsp;
+            return rsp; // No ready processes
         }
-        quantumsLeft = currentProcess->priority - 1;
+
+        // Skip blocked/exited processes (shouldn't be in queue, but safety check)
     } while (currentProcess->state == BLOCKED || currentProcess->state == EXITED);
 
     clearYield();
+    quantumsLeft = currentProcess->priority - 1;
     currentProcess->state = RUNNING;
     return currentProcess->stackEnd;
 }
@@ -154,23 +114,24 @@ int blockProcess(PID pid)
     Process *pcb;
     if ((pcb = getProcess(pid)) == NULL)
         return 1;
+
     pcb->state = BLOCKED;
-    garbageCollect();
 
     if (pcb->pid == currentProcess->pid)
     {
-        return yield();
+        return yield(); // Force context switch
     }
     return 0;
 }
 
 int unblockProcess(PID pid)
 {
-    if (getProcess(pid)->state != BLOCKED)
-        return -1;
     Process *pcb = getProcess(pid);
+    if (pcb == NULL || pcb->state != BLOCKED)
+        return -1;
+
     pcb->state = READY;
-    schedule(pcb);
+    schedule(pcb); // Add back to appropriate priority queue
     return 0;
 }
 
@@ -187,10 +148,6 @@ char getYield()
     return isYield;
 }
 
-// Explicitly yield the CPU from the running process.
-// Contracts:
-// - Sets the yield flag and returns 1 so callers can branch if needed.
-// - Next timer interrupt/scheduler cycle will switch context.
 int yield()
 {
     setYield();

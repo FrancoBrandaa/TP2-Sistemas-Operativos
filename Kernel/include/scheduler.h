@@ -4,19 +4,6 @@
 #define YIELD_NOT_DONE 0
 #include "./process.h"
 #include <stdint.h>
-typedef struct Node
-{
-    Process * pcb;
-    struct Node * next;
-    // uint32_t executionsLeft;
-}Node;
-
-typedef struct List
-{
-    Node * head ;
-    Node * tail ;
-}List;
-
 
 /*
  * Initializes the scheduler for the initial process.
@@ -87,8 +74,4 @@ void clearYield();
  */
 char getYield();
 
-/*
- * Performs garbage collection to clean up unused resources.
- */
-void garbageCollect();
 #endif

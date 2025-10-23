@@ -4,8 +4,7 @@
 #include <stdint.h>
 #include "../include/memoryManager.h"
 
-typedef long type;
-
+typedef void * type; //long antes
 typedef struct queueCDT * queueADT;
 
 /*

@@ -30,8 +30,6 @@ int isValidPID(PID pid)
     return pid > 0 && pid <= MAX_PID && processes[pid - 1].state != EXITED;
 }
 
-
-
 /*
  * initProcesses
  * -------------
@@ -230,8 +228,6 @@ PID getpid(void)
     return getCurrentProcess()->pid;
 }
 
-
-
 /*
  * getProcess
  * ----------
@@ -330,7 +326,6 @@ int kill(PID pid)
     pcb->argc = 0;
     // closeFD(pcb->fds[0]);
     // closeFD(pcb->fds[1]);
-    garbageCollect();
 
     // unblockWaitingProcesses(pid, 0);
 
@@ -347,13 +342,11 @@ int changeProccessPriority(PID pid, Priority priority)
     {
         return -1;
     }
+
     processes[pid - 1].priority = priority;
+    
     return 0;
 }
-
-
-
-
 
 // int getFileDescriptors(int *fds){
 

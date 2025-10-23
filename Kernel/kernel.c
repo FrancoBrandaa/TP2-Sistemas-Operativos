@@ -11,7 +11,6 @@
 #include <scheduler.h>
 #include <interrupts.h>
 
-
 // extern uint8_t text;
 // extern uint8_t rodata;
 // extern uint8_t data;
@@ -60,7 +59,7 @@ void process_idle()
 	while (1)
 	{
 		_hlt();
-		//print("estoy en idle juju");
+		// print("estoy en idle juju");
 	}
 }
 
@@ -71,8 +70,10 @@ int main()
 	createMemoryManager(memoryStart, memorySize);
 
 	setFontSize(2);
+
 	initProcesses();
-	
+	initScheduler();
+
 	// habilitamos las interrupciones
 	_sti();
 
@@ -80,23 +81,20 @@ int main()
 	params.name = "init";
 	params.argc = 0;
 	params.argv = NULL;
-	params.priority = DEFAULT_PRIORITY;
+	params.priority = 1;
 	params.entryPoint = (entryPoint)&process_idle;
 	params.foreground = 0;
 	createProcess(&params);
-
 
 	params.name = "shell";
 	params.entryPoint = (entryPoint)shellModuleAddress;
 	params.foreground = 1;
 	params.argc = 0;
 	params.argv = NULL;
-	params.priority = DEFAULT_PRIORITY;
+	params.priority = 3;
 	createProcess(&params);
 
-	// inicializamos el scheduler 
-	initScheduler();
-	forceSwitchContext(); //para que arranque el primer proceso, no dependo del timer.
-	
+	forceSwitchContext(); // para que arranque el primer proceso, no dependo del timer.
+
 	return 0;
 }
