@@ -11,10 +11,27 @@ GLOBAL setSpeaker
 
 GLOBAL getRegisterSnapshot
 
+GLOBAL acquire_spinlock
+
+GLOBAL release_spinlock
+
 EXTERN register_snapshot
 EXTERN register_snapshot_taken
 
 section .text
+
+acquire_spinlock:
+	mov rax, 0
+	mov al, 1
+	xchg al, [rdi]
+	cmp al, 0
+	jne spinlockAcquire
+	ret
+
+release_spinlock:
+	mov byte [rdi], 0
+    ret
+
 
 getKeyboardBuffer:
 	push rbp
@@ -119,3 +136,5 @@ setSpeaker:
 	mov rsp, rbp
 	pop rbp
 	ret
+
+

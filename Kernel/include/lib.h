@@ -11,7 +11,8 @@ size_t strlen(const char *str);
 void *memset(void *destination, int32_t character, uint64_t length);
 void *memcpy(void *destination, const void *source, uint64_t length);
 void printf(const char *string);
-
+void acquire_spinlock(int32_t * lock);
+void release_spinlock(int32_t * lock);
 uint8_t getKeyboardBuffer(void);
 uint8_t getKeyboardStatus(void);
 
