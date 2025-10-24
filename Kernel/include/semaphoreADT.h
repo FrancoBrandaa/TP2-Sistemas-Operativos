@@ -15,9 +15,9 @@ typedef struct semaphoreCDT
 
 
 
-void create_semaphore();
+semaphoreADT sem_init(int value);
 
-void wait(semaphoreADT sem, PID pid);
+void sem_wait(semaphoreADT sem, PID pid);
 
 
-void post(semaphoreADT sem);
+void sem_post(semaphoreADT sem);

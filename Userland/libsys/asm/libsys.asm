@@ -41,6 +41,7 @@ GLOBAL sys_unblock
 GLOBAL sys_ps
 GLOBAL sys_change_priority
 GLOBAL sys_yield
+GLOBAL sys_wait
 
 section .text
 
@@ -104,3 +105,4 @@ sys_unblock: sys_int80 0x80000204
 sys_ps: sys_int80 0x80000205
 sys_change_priority: sys_int80 0x80000206
 sys_yield: sys_int80 0x80000207
+sys_wait: sys_int80 0x80000208

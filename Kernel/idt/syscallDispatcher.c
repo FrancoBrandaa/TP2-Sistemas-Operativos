@@ -110,6 +110,8 @@ int32_t syscallDispatcher(Registers *registers)
 		return sys_change_priority(registers->rdi, registers->rsi);
 	case 0x80000207:
 		return sys_yield();
+	case 0x80000208:
+		return sys_wait(registers->rdi, (int *)registers->rsi);
 
 	default:
 		return 0;
@@ -385,6 +387,12 @@ int32_t sys_change_priority(int32_t pid, int32_t priority)
 int32_t sys_yield(void)
 {
 	yield();
+	return 0;
+}
+
+int32_t sys_wait(int32_t pid, int *wstatus)
+{
+	waitProcess(pid, wstatus);
 	return 0;
 }
 

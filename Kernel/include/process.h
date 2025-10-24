@@ -36,7 +36,8 @@ typedef struct
     entryPoint entryPoint;//ver
     ProcessState state;
     uint64_t *stackBase, *stackEnd;
-    int childReturnValue;
+    int waitReturnValue;
+    PID waitPid;
     //int fds[2]; // File descriptors
 } Process;
 

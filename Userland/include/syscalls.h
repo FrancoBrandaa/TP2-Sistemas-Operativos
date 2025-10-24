@@ -81,5 +81,7 @@ void *sys_ps(void);
 int32_t sys_change_priority(int32_t pid, int32_t priority);
 /* 0x80000207 */
 int32_t sys_yield(void);
+/* 0x80000208 */
+int32_t sys_wait(int32_t pid, int32_t *wstatus);
 
 #endif

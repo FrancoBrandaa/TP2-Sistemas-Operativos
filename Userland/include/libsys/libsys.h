@@ -133,5 +133,6 @@ int32_t unblock(int32_t pid);
 void *ps(void);
 int32_t changePriority(int32_t pid, int32_t priority);
 int32_t yield(void);
+int32_t wait(int32_t pid, int32_t *wstatus);
 
 #endif /* _LIBSYS_H_ */

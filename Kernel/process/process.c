@@ -50,7 +50,7 @@ PID initProcesses(void)
         processes[i].state = EXITED;
         processes[i].argv = NULL;
         processes[i].argc = 0;
-        // processes[i].waitingPID = NONPID;
+        processes[i].waitPid = NONPID;
     }
     return 0;
 }
@@ -103,6 +103,8 @@ int processLoader(int argc, char *argv[], entryPoint entry)
 {
     int returnValue = entry(argc, argv);
     PID processPid = getpid();
+    Process *proc = getProcess(processPid);
+    proc->waitReturnValue = returnValue;
     // unblockWaitingProcesses(processPid, returnValue);
     kill(processPid);
     return returnValue;
@@ -181,6 +183,7 @@ PID createProcess(creationParameters *params)
     processes[allocatedProcess].priority = params->priority;
     processes[allocatedProcess].entryPoint = params->entryPoint;
     processes[allocatedProcess].foreground = params->foreground;
+    processes[allocatedProcess].waitPid = NONPID;
     processes[allocatedProcess].state = READY;
     processes[allocatedProcess].stackBase = stackLimit + STACK_SIZE; // donde aputa rsp
 
@@ -240,6 +243,10 @@ PID getpid(void)
  */
 Process *getProcess(PID pid)
 {
+    if (pid <= 0 || pid > MAX_PID)
+    {
+        return NULL;
+    }
     if (processes[pid - 1].state != EXITED)
     {
         return &processes[pid - 1];
@@ -289,6 +296,28 @@ Process *getProcessesInformation()
 }
 
 /*
+ * waitProcess
+ * -----------
+ * Bloquea el proceso actual hasta que el proceso con PID `pidToWait`
+ * termine. Si `wstatus` no es NULL, almacena el valor de retorno del
+ * proceso esperado.
+ */
+void waitProcess(PID pidToWait, int *wstatus)
+{
+    PID mypid = getpid();
+    Process *processToWait = getProcess(pidToWait);
+    if (processToWait == NULL)
+        return;
+
+    processToWait->waitPid = mypid;
+    blockProcess(mypid);
+    if (wstatus != NULL)
+    {
+        *wstatus = processToWait->waitReturnValue;
+    }
+}
+
+/*
  * freeProcessesInformation
  * ------------------------
  * Qué hace:
@@ -328,6 +357,11 @@ int kill(PID pid)
     // closeFD(pcb->fds[1]);
 
     // unblockWaitingProcesses(pid, 0);
+    if (pcb->waitPid != NONPID)
+    {
+        unblockProcess(pcb->waitPid);
+        pcb->waitPid = NONPID;
+    }
 
     if (getCurrentProcess()->pid == pid)
     {

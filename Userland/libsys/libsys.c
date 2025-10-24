@@ -160,3 +160,8 @@ int32_t yield(void)
     return sys_yield();
 }
 
+int32_t wait(int32_t pid, int32_t *wstatus)
+{
+    return sys_wait(pid, wstatus);
+}
+
