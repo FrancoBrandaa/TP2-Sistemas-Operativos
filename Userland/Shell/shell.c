@@ -37,6 +37,9 @@ int help(int argc, char **argv);
 int man(int argc, char **argv);
 int regs(int argc, char **argv);
 
+/* Process wrappers for test programs */
+int counter_wrapper(int argc, char **argv);
+
 /* ============================================================================
  * KEYBOARD CALLBACK DECLARATIONS
  * ============================================================================ */
@@ -99,6 +102,12 @@ Command commands[] = {
      .usage = "regs",
      .type = CMD_BUILTIN,
      .handler.builtin = regs},
+
+    {.name = "counter",
+     .description = "Test: Counts from 1 to N and exits",
+     .usage = "counter [max_count]",
+     .type = CMD_PROCESS,
+     .handler.process = {.entrypoint = counter_wrapper, .priority = 1, .is_background = 0}},
 };
 
 Command *find_command(const char *name)
@@ -128,7 +137,7 @@ static int parse_arguments(char *buffer, int *argc, char **argv)
     return 0;
 }
 
-static int execute_command(Command *cmd, int argc, char **argv)
+static int execute_command(Command *cmd, int argc, char **argv, int run_in_background)
 {
     if (cmd->type == CMD_BUILTIN)
     {
@@ -138,6 +147,10 @@ static int execute_command(Command *cmd, int argc, char **argv)
 
     else if (cmd->type == CMD_PROCESS)
     {
+        // Determine if process should run in background
+        // User can override with & at the end of the command
+        int is_background = run_in_background || cmd->handler.process.is_background;
+
         // Create a new process
         int pid = createProcess(
             cmd->name,
@@ -145,7 +158,7 @@ static int execute_command(Command *cmd, int argc, char **argv)
             argc,
             argv,
             cmd->handler.process.priority,
-            cmd->handler.process.is_background);
+            !is_background); // foreground parameter is inverted
 
         if (pid < 0)
         {
@@ -156,7 +169,22 @@ static int execute_command(Command *cmd, int argc, char **argv)
         printf("Process '%s' created with PID: %d (%s)\n",
                cmd->name,
                pid,
-               cmd->handler.process.is_background ? "background" : "foreground");
+               is_background ? "background" : "foreground");
+
+        // Wait for foreground processes to complete
+        if (!is_background)
+        {
+            int32_t status;
+            wait(pid, &status);
+
+            // Clear any input that was typed during process execution
+            clearInputBuffer();
+            buffer_dim = 0;
+            buffer[0] = '\0';
+
+            printf("\e[0;32mProcess '%s' (PID %d) completed with status: %d\e[0m\n",
+                   cmd->name, pid, status);
+        }
 
         return 0;
     }
@@ -186,7 +214,17 @@ static void printNextCommand(enum REGISTERABLE_KEYS scancode)
 int main()
 {
     clear(0, NULL);
-    
+
+    // // TEST_PRIO - Test de prioridades
+    // printf("\e[1;36m=== INICIANDO TEST_PRIO ===\e[0m\n");
+    // printf("Este test crea 3 procesos con diferentes prioridades.\n");
+    // printf("Deberías ver diferencias en el orden de finalización.\n\n");
+
+    // char *prio_argv[] = {"100000000"}; // Max value para contar
+    // test_prio(1, prio_argv);
+    // printf("\n\e[1;32m=== TEST_PRIO FINALIZADO ===\e[0m\n\n");
+    // // ========================================================================
+
     // // MY_TEST_PROCESSES - Version mejorada con colores y delays
     // printf("\e[1;33m=== INICIANDO MY_TEST_PROCESSES ===\e[0m\n");
     // printf("Creando 3 procesos que imprimen su PID constantemente...\n");
@@ -238,6 +276,22 @@ int main()
         char command_buffer[MAX_BUFFER_SIZE];
         strncpy(command_buffer, buffer, MAX_BUFFER_SIZE);
 
+        // Check for background execution (&)
+        int run_in_background = 0;
+        int len = strlen(command_buffer);
+        if (len > 0 && command_buffer[len - 1] == '&')
+        {
+            run_in_background = 1;
+            command_buffer[len - 1] = '\0'; // Remove the '&'
+            // Trim trailing whitespace
+            len--;
+            while (len > 0 && (command_buffer[len - 1] == ' ' || command_buffer[len - 1] == '\t'))
+            {
+                command_buffer[len - 1] = '\0';
+                len--;
+            }
+        }
+
         if (parse_arguments(command_buffer, &argc, argv) != 0 || argc == 0)
         {
             buffer[0] = buffer_dim = 0;
@@ -249,8 +303,8 @@ int main()
 
         if (cmd != NULL)
         {
-            // Execute command
-            last_command_output = execute_command(cmd, argc, argv);
+            // Execute command (pass background flag)
+            last_command_output = execute_command(cmd, argc, argv, run_in_background);
 
             // Save to history
             strncpy(command_history[command_history_last], command_history_buffer, MAX_BUFFER_SIZE - 1);
@@ -395,4 +449,43 @@ int regs(int argc, char **argv)
     }
 
     return 0;
+}
+
+/* ============================================================================
+ * PROCESS WRAPPERS FOR TEST PROGRAMS
+ * ============================================================================ */
+
+/**
+ * counter_wrapper - Counts from 1 to N and exits
+ *
+ * Usage: counter [max]
+ *   - max: Number to count up to (default: 10)
+ *
+ * This is useful for testing:
+ *   - Foreground wait: Shell should wait until counting is done
+ *   - Background execution: Can count while you use the shell
+ *   - Process completion: Should see "Process completed" message
+ */
+int counter_wrapper(int argc, char **argv)
+{
+    int max = 10;
+    int64_t pid = getpid();
+
+    if (argc > 1)
+    {
+        max = satoi(argv[1]);
+    }
+
+    printf("\e[0;36m[Process %d] Counting to %d...\e[0m\n", pid, max);
+
+    for (int i = 1; i <= max; i++)
+    {
+        printf("\e[0;36m[%d]\e[0m %d ", pid, i);
+        if (i % 10 == 0)
+            printf("\n");
+        bussy_wait(200000000); // 200ms delay
+    }
+
+    printf("\n\e[0;32m[Process %d] Done! Counted to %d\e[0m\n", pid, max);
+    return max; // Return the count as exit status
 }

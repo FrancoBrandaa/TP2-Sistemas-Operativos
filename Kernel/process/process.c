@@ -378,7 +378,7 @@ int changeProccessPriority(PID pid, Priority priority)
     }
 
     processes[pid - 1].priority = priority;
-    
+
     return 0;
 }
 
@@ -417,3 +417,16 @@ int changeProccessPriority(PID pid, Priority priority)
 //     }
 //     return NULL;
 // }
+
+Process *getTerminalForegroundProcess()
+{
+    for (int i = 0; i < MAX_PROCESSES; i++)
+    {
+        if (processes[i].foreground && processes[i].state != EXITED &&
+            processes[i].pid != INITPID && processes[i].pid != SHELLPID)
+        {
+            return &processes[i];
+        }
+    }
+    return NULL;
+}

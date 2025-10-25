@@ -191,8 +191,8 @@ int checkPriority(Priority priority);
 
 
 
-// /*
-//  * Retrieves the process currently in the foreground of the terminal.
-//  * Returns a pointer to the foreground process.
-//  */
-// Process * getTerminalForegroundProcess(void);
+/*
+ * Retrieves the process currently in the foreground of the terminal.
+ * Returns a pointer to the foreground process.
+ */
+Process * getTerminalForegroundProcess(void);
