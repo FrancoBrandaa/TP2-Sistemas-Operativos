@@ -6,6 +6,7 @@
 #include "command.h"
 #include <libsys.h>
 #include <exceptions.h>
+#include "../tests/test.h"
 
 /* ============================================================================
  * INTERNAL STATE
@@ -185,6 +186,15 @@ static void printNextCommand(enum REGISTERABLE_KEYS scancode)
 int main()
 {
     clear(0, NULL);
+    
+    // // MY_TEST_PROCESSES - Version mejorada con colores y delays
+    // printf("\e[1;33m=== INICIANDO MY_TEST_PROCESSES ===\e[0m\n");
+    // printf("Creando 3 procesos que imprimen su PID constantemente...\n");
+    // printf("El test los crea, bloquea, desbloquea y mata aleatoriamente.\n\n");
+
+    // char *test_argv[] = {"3"}; // Crear 3 procesos
+    // my_test_processes(1, test_argv);
+    // // ========================================================================
 
     registerKey(KP_UP_KEY, printPreviousCommand);
     registerKey(KP_DOWN_KEY, printNextCommand);
@@ -260,7 +270,6 @@ int main()
     __builtin_unreachable();
     return 0;
 }
-
 
 // COMANDOS BUILT-IN
 
