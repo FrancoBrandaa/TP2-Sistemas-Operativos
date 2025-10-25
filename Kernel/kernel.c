@@ -10,6 +10,7 @@
 #include <process.h>
 #include <scheduler.h>
 #include <interrupts.h>
+#include <semaphoreManager.h>
 
 // extern uint8_t text;
 // extern uint8_t rodata;
@@ -68,7 +69,7 @@ int main()
 	load_idt();
 
 	createMemoryManager(memoryStart, memorySize);
-
+	initSemManager();
 	setFontSize(2);
 
 	initProcesses();

@@ -14,19 +14,13 @@
 
 sem_t sems[MAX_SEMS];
 
-int initSemManager(){
+void initSemManager(){
 
     for (int i = 0; i < MAX_SEMS; i++) {
         sems[i].used = 0;
         sems[i].locked = 0;
         sems[i].waiting = NULL;
-        if (sems[i].waiting == NULL) {
-            return -1;
-        }
-        
     }
-
-    return 0;
 }
 
 static int findFreeSem() {

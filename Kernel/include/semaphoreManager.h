@@ -21,9 +21,8 @@ typedef struct sem_t {
 
 /*
  * Initializes the semaphore manager.
- * Returns 0 on success, or a negative value on failure.
  */
-int initSemManager();
+void initSemManager();
 
 /*
  * Creates a new semaphore and opens it for the current process.
