@@ -9,6 +9,7 @@
 #include <memoryManager.h>
 #include <process.h>
 #include <scheduler.h>
+#include <semaphoreManager.h>
 
 extern int64_t register_snapshot[18];
 extern int64_t register_snapshot_taken;
@@ -112,6 +113,22 @@ int32_t syscallDispatcher(Registers *registers)
 		return sys_yield();
 	case 0x80000208:
 		return sys_wait(registers->rdi, (int *)registers->rsi);
+
+	case 0x80000300:
+		return sys_sem_open((const char *)registers->rdi, registers->rsi);
+	case 0x80000301:
+		return sys_sem_close(registers->rdi);
+	case 0x80000302:
+		sys_sem_wait(registers->rdi);
+		return 0;
+	case 0x80000303:
+		sys_sem_post(registers->rdi);
+		return 0;
+	case 0x80000304:
+		return sys_sem_value(registers->rdi);
+	case 0x80000305:
+		sys_sem_destroy(registers->rdi);
+		return 0;
 
 	default:
 		return 0;
@@ -366,6 +383,7 @@ int32_t sys_kill(int32_t pid)
 
 int32_t sys_block(int32_t pid)
 {
+	if(pid == 1 || !isValidPID(pid)) return -1; //El usuario no puede bloquear el proceso init
 	return blockProcess(pid);
 }
 
@@ -396,4 +414,65 @@ int32_t sys_wait(int32_t pid, int *wstatus)
 	return 0;
 }
 
+
+
 // ==================================================================
+// Semaphore system calls
+// ==================================================================
+
+int32_t sys_sem_open(const char *name, int value)
+{
+    int semId;
+    
+    if (name == NULL) {
+        return -1;
+    }
+
+    if (findSemByName(name) < 0) {
+        semId = semCreate(name, value);
+
+        if (semId < 0) {
+            return -1;
+        }
+
+        return semId;
+    }
+    return semOpen(name);
+}
+
+int32_t sys_sem_close(int semId)
+{
+    return semClose(semId);
+}
+
+void sys_sem_wait(int semId)
+{
+    if (semId < 0 || !semExists(semId)) {
+        return;
+    }
+
+    semWait(semId);
+}
+
+void sys_sem_post(int semId)
+{
+    if (semId < 0 || !semExists(semId)) {
+        return;
+    }
+
+    semPost(semId);
+}
+
+int32_t sys_sem_value(int semId)
+{
+    return semValue(semId);
+}
+
+void sys_sem_destroy(int semId)
+{
+    if (semId < 0 || !semExists(semId)) {
+        return;
+    }
+
+    semDestroy(semId);
+}

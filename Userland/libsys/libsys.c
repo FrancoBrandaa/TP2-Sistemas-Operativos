@@ -165,3 +165,34 @@ int32_t wait(int32_t pid, int32_t *wstatus)
     return sys_wait(pid, wstatus);
 }
 
+// Semaphore management wrappers
+int32_t semOpen(const char *name, int value)
+{
+    return sys_sem_open(name, value);
+}
+
+int32_t semClose(int semId)
+{
+    return sys_sem_close(semId);
+}
+
+void semWait(int semId)
+{
+    sys_sem_wait(semId);
+}
+
+void semPost(int semId)
+{
+    sys_sem_post(semId);
+}
+
+int32_t semValue(int semId)
+{
+    return sys_sem_value(semId);
+}
+
+void semDestroy(int semId)
+{
+    sys_sem_destroy(semId);
+}
+

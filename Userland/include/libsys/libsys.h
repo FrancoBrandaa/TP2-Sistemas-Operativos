@@ -135,4 +135,13 @@ int32_t changePriority(int32_t pid, int32_t priority);
 int32_t yield(void);
 int32_t wait(int32_t pid, int32_t *wstatus);
 
+// Semaphore management wrappers (provided by libsys)
+// These are thin wrappers that call kernel syscalls via libsys
+int32_t semOpen(const char *name, int value);
+int32_t semClose(int semId);
+void semWait(int semId);
+void semPost(int semId);
+int32_t semValue(int semId);
+void semDestroy(int semId);
+
 #endif /* _LIBSYS_H_ */

@@ -84,4 +84,18 @@ int32_t sys_yield(void);
 /* 0x80000208 */
 int32_t sys_wait(int32_t pid, int32_t *wstatus);
 
+/* Semaphore syscalls */
+/* 0x80000300 */
+int32_t sys_sem_open(const char *name, int value);
+/* 0x80000301 */
+int32_t sys_sem_close(int semId);
+/* 0x80000302 */
+void sys_sem_wait(int semId);
+/* 0x80000303 */
+void sys_sem_post(int semId);
+/* 0x80000304 */
+int32_t sys_sem_value(int semId);
+/* 0x80000305 */
+void sys_sem_destroy(int semId);
+
 #endif

@@ -83,6 +83,15 @@ int32_t sys_unblock(int32_t pid);
 void *sys_ps(void);
 int32_t sys_change_priority(int32_t pid, int32_t priority);
 int32_t sys_yield(void);
+int32_t sys_wait(int32_t pid, int *wstatus);
+
+// Semaphore syscall prototypes
+int32_t sys_sem_open(const char *name, int value);
+int32_t sys_sem_close(int semId);
+void sys_sem_wait(int semId);
+void sys_sem_post(int semId);
+int32_t sys_sem_value(int semId);
+void sys_sem_destroy(int semId);
 
 PID sys_getProcesspid();
 

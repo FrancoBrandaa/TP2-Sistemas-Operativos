@@ -43,6 +43,13 @@ GLOBAL sys_change_priority
 GLOBAL sys_yield
 GLOBAL sys_wait
 
+GLOBAL sys_sem_open
+GLOBAL sys_sem_close
+GLOBAL sys_sem_wait
+GLOBAL sys_sem_post
+GLOBAL sys_sem_value
+GLOBAL sys_sem_destroy
+
 section .text
 
 %macro sys_int80 1
@@ -106,3 +113,11 @@ sys_ps: sys_int80 0x80000205
 sys_change_priority: sys_int80 0x80000206
 sys_yield: sys_int80 0x80000207
 sys_wait: sys_int80 0x80000208
+
+; syscalls de semaforos
+sys_sem_open: sys_int80 0x80000300
+sys_sem_close: sys_int80 0x80000301
+sys_sem_wait: sys_int80 0x80000302
+sys_sem_post: sys_int80 0x80000303
+sys_sem_value: sys_int80 0x80000304
+sys_sem_destroy: sys_int80 0x80000305
