@@ -2,76 +2,189 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
-#include "../tests/test.h"
+#include "shell.h"
+#include "command.h"
 #include <libsys.h>
 #include <exceptions.h>
 
-#ifdef ANSI_4_BIT_COLOR_SUPPORT
-#include <ansiColors.h>
-#endif
-
-
-#define MAX_BUFFER_SIZE 1024
-#define HISTORY_SIZE 10
-
-#define INC_MOD(x, m) x = (((x) + 1) % (m))
-#define SUB_MOD(a, b, m) ((a) - (b) < 0 ? (m) - (b) + (a) : (a) - (b))
-#define DEC_MOD(x, m) ((x) = SUB_MOD(x, 1, m))
+/* ============================================================================
+ * INTERNAL STATE
+ * ============================================================================ */
 
 static char buffer[MAX_BUFFER_SIZE];
 static int buffer_dim = 0;
 
-int clear(void);
-int echo(void);
-int exit(void);
-int fontdec(void);
-int font(void);
-int help(void);
-int man(void);
-int regs(void);
-int memtest(void);
-int memstress(void);
-int test_mm(int argc, char **argv);
-int test_mm_wrapper(void);
-int test_processes_wrapper(void);
+/* Command history state */
+char command_history[HISTORY_SIZE][MAX_BUFFER_SIZE] = {0};
+char command_history_buffer[MAX_BUFFER_SIZE] = {0};
+uint8_t command_history_last = 0;
+static uint8_t last_command_arrowed = 0;
 
+/* Last command exit code (for $? substitution) */
+static uint64_t last_command_output = 0;
+
+/* ============================================================================
+ * COMMAND FUNCTION DECLARATIONS
+ * ============================================================================ */
+
+/* Built-in command implementations */
+int clear(int argc, char **argv);
+int echo(int argc, char **argv);
+int exit_shell(int argc, char **argv);
+int font(int argc, char **argv);
+int help(int argc, char **argv);
+int man(int argc, char **argv);
+int regs(int argc, char **argv);
+
+/* ============================================================================
+ * KEYBOARD CALLBACK DECLARATIONS
+ * ============================================================================ */
 
 static void printPreviousCommand(enum REGISTERABLE_KEYS scancode);
 static void printNextCommand(enum REGISTERABLE_KEYS scancode);
 
-static uint8_t last_command_arrowed = 0;
-
-typedef struct
-{
-    char *name;
-    int (*function)(void);
-    char *description;
-} Command;
-
-/* All available commands. Sorted alphabetically by their name */
+// Lista de comandos disponibles
 Command commands[] = {
-    {.name = "clear", .function = (int (*)(void))(unsigned long long)clear, .description = "Clears the screen"},
-    {.name = "divzero", .function = (int (*)(void))(unsigned long long)_divzero, .description = "Generates a division by zero exception"},
-    {.name = "echo", .function = (int (*)(void))(unsigned long long)echo, .description = "Prints the input string"},
-    {.name = "exit", .function = (int (*)(void))(unsigned long long)exit, .description = "Command exits w/ the provided exit code or 0"},
-    {.name = "font", .function = (int (*)(void))(unsigned long long)font, .description = "Increases or decreases the font size.\n\t\t\t\tUse:\n\t\t\t\t\t  + font increase\n\t\t\t\t\t  + font decrease"},
-    {.name = "help", .function = (int (*)(void))(unsigned long long)help, .description = "Prints the available commands"},
-    {.name = "invop", .function = (int (*)(void))(unsigned long long)_invalidopcode, .description = "Generates an invalid Opcode exception"},
-    {.name = "regs", .function = (int (*)(void))(unsigned long long)regs, .description = "Prints the register snapshot, if any"},
-    {.name = "man", .function = (int (*)(void))(unsigned long long)man, .description = "Prints the description of the provided command"},
-    //{.name = "test_mm", .function = (int (*)(void))(unsigned long long)test_mm_wrapper, .description = "Advanced memory manager test (runs as process). Usage: test_mm [max_memory]"},
-    {.name = "test_processes", .function = (int (*)(void))(unsigned long long)test_processes_wrapper, .description = "Process management test (runs as process). Usage: test_processes <max_processes>"},
+    {.name = "clear",
+     .description = "Clears the screen",
+     .usage = "clear",
+     .type = CMD_BUILTIN,
+     .handler.builtin = clear},
+
+    {.name = "divzero",
+     .description = "Generates a division by zero exception",
+     .usage = "divzero",
+     .type = CMD_BUILTIN,
+     .handler.builtin = (int (*)(int, char **))_divzero},
+
+    {.name = "echo",
+     .description = "Prints the input string",
+     .usage = "echo <text>",
+     .type = CMD_BUILTIN,
+     .handler.builtin = echo},
+
+    {.name = "exit",
+     .description = "Exits the shell with the provided exit code or 0",
+     .usage = "exit [code]",
+     .type = CMD_BUILTIN,
+     .handler.builtin = exit_shell},
+
+    {.name = "font",
+     .description = "Increases or decreases the font size",
+     .usage = "font [increase|decrease]",
+     .type = CMD_BUILTIN,
+     .handler.builtin = font},
+
+    {.name = "help",
+     .description = "Prints the available commands",
+     .usage = "help",
+     .type = CMD_BUILTIN,
+     .handler.builtin = help},
+
+    {.name = "invop",
+     .description = "Generates an invalid Opcode exception",
+     .usage = "invop",
+     .type = CMD_BUILTIN,
+     .handler.builtin = (int (*)(int, char **))_invalidopcode},
+
+    {.name = "man",
+     .description = "Prints the description and usage of a command",
+     .usage = "man <command>",
+     .type = CMD_BUILTIN,
+     .handler.builtin = man},
+
+    {.name = "regs",
+     .description = "Prints the register snapshot, if any",
+     .usage = "regs",
+     .type = CMD_BUILTIN,
+     .handler.builtin = regs},
 };
 
-char command_history[HISTORY_SIZE][MAX_BUFFER_SIZE] = {0};
-char command_history_buffer[MAX_BUFFER_SIZE] = {0};
-uint8_t command_history_last = 0;
+Command *find_command(const char *name)
+{
+    for (int i = 0; i < COMMAND_COUNT; i++)
+    {
+        if (strcmp(commands[i].name, name) == 0)
+        {
+            return &commands[i];
+        }
+    }
+    return NULL;
+}
 
-static uint64_t last_command_output = 0;
+static int parse_arguments(char *buffer, int *argc, char **argv)
+{
+    *argc = 0;
+    char *token = strtok(buffer, " ");
+
+    while (token != NULL && *argc < MAX_ARGS)
+    {
+        argv[(*argc)++] = token;
+        token = strtok(NULL, " ");
+    }
+
+    argv[*argc] = NULL;
+    return 0;
+}
+
+static int execute_command(Command *cmd, int argc, char **argv)
+{
+    if (cmd->type == CMD_BUILTIN)
+    {
+        // Execute built-in command directly
+        return cmd->handler.builtin(argc, argv);
+    }
+
+    else if (cmd->type == CMD_PROCESS)
+    {
+        // Create a new process
+        int pid = createProcess(
+            cmd->name,
+            cmd->handler.process.entrypoint,
+            argc,
+            argv,
+            cmd->handler.process.priority,
+            cmd->handler.process.is_background);
+
+        if (pid < 0)
+        {
+            fprintf(FD_STDERR, "\e[0;31mError: Could not create process for '%s'\e[0m\n", cmd->name);
+            return -1;
+        }
+
+        printf("Process '%s' created with PID: %d (%s)\n",
+               cmd->name,
+               pid,
+               cmd->handler.process.is_background ? "background" : "foreground");
+
+        return 0;
+    }
+
+    return -1;
+}
+
+// KEYBOARD HISTORY
+static void printPreviousCommand(enum REGISTERABLE_KEYS scancode)
+{
+    clearInputBuffer();
+    last_command_arrowed = SUB_MOD(last_command_arrowed, 1, HISTORY_SIZE);
+
+    if (command_history[last_command_arrowed][0] != 0)
+        fprintf(FD_STDIN, command_history[last_command_arrowed]);
+}
+
+static void printNextCommand(enum REGISTERABLE_KEYS scancode)
+{
+    clearInputBuffer();
+    last_command_arrowed = (last_command_arrowed + 1) % HISTORY_SIZE;
+
+    if (command_history[last_command_arrowed][0] != 0)
+        fprintf(FD_STDIN, command_history[last_command_arrowed]);
+}
 
 int main()
 {
-    clear();
+    clear(0, NULL);
 
     registerKey(KP_UP_KEY, printPreviousCommand);
     registerKey(KP_DOWN_KEY, printNextCommand);
@@ -102,34 +215,43 @@ int main()
 
         buffer[buffer_dim] = 0;
 
-        char *command = strtok(buffer, " ");
-        int i = 0;
-
-        for (; i < sizeof(commands) / sizeof(Command); i++)
+        // Skip empty commands
+        if (buffer_dim == 0 || buffer[0] == '\0')
         {
-            if (strcmp(commands[i].name, command) == 0)
-            {
-                last_command_output = commands[i].function();
-
-                strncpy(command_history[command_history_last], command_history_buffer, 255);
-                command_history[command_history_last][buffer_dim] = '\0';
-                INC_MOD(command_history_last, HISTORY_SIZE);
-                last_command_arrowed = command_history_last;
-                break;
-            }
+            buffer[0] = buffer_dim = 0;
+            continue;
         }
 
-        // If the command is not found, ignore \n
-        if (i == sizeof(commands) / sizeof(Command))
+        // Parse arguments
+        char *argv[MAX_ARGS];
+        int argc = 0;
+        char command_buffer[MAX_BUFFER_SIZE];
+        strncpy(command_buffer, buffer, MAX_BUFFER_SIZE);
+
+        if (parse_arguments(command_buffer, &argc, argv) != 0 || argc == 0)
         {
-            if (command != NULL && *command != '\0')
-            {
-                fprintf(FD_STDERR, "\e[0;33mCommand not found:\e[0m %s\n", command);
-            }
-            else if (command == NULL)
-            {
-                printf("\n");
-            }
+            buffer[0] = buffer_dim = 0;
+            continue;
+        }
+
+        // Search and execute command
+        Command *cmd = find_command(argv[0]);
+
+        if (cmd != NULL)
+        {
+            // Execute command
+            last_command_output = execute_command(cmd, argc, argv);
+
+            // Save to history
+            strncpy(command_history[command_history_last], command_history_buffer, MAX_BUFFER_SIZE - 1);
+            command_history[command_history_last][buffer_dim] = '\0';
+            INC_MOD(command_history_last, HISTORY_SIZE);
+            last_command_arrowed = command_history_last;
+        }
+        else
+        {
+            // Command not found
+            fprintf(FD_STDERR, "\e[0;33mCommand not found:\e[0m %s\n", argv[0]);
         }
 
         buffer[0] = buffer_dim = 0;
@@ -139,142 +261,110 @@ int main()
     return 0;
 }
 
-static void printPreviousCommand(enum REGISTERABLE_KEYS scancode)
-{
-    clearInputBuffer();
-    last_command_arrowed = SUB_MOD(last_command_arrowed, 1, HISTORY_SIZE);
-    if (command_history[last_command_arrowed][0] != 0)
-    {
-        fprintf(FD_STDIN, command_history[last_command_arrowed]);
-    }
-}
 
-static void printNextCommand(enum REGISTERABLE_KEYS scancode)
-{
-    clearInputBuffer();
-    last_command_arrowed = (last_command_arrowed + 1) % HISTORY_SIZE;
-    if (command_history[last_command_arrowed][0] != 0)
-    {
-        fprintf(FD_STDIN, command_history[last_command_arrowed]);
-    }
-}
+// COMANDOS BUILT-IN
 
-int echo(void)
+int echo(int argc, char **argv)
 {
-    for (int i = strlen("echo") + 1; i < buffer_dim; i++)
+    // Print all arguments starting from argv[1]
+    for (int i = 1; i < argc; i++)
     {
-        switch (buffer[i])
+        printf("%s", argv[i]);
+        if (i < argc - 1)
         {
-        case '\\':
-            switch (buffer[i + 1])
-            {
-            case 'n':
-                printf("\n");
-                i++;
-                break;
-            case 'e':
-#ifdef ANSI_4_BIT_COLOR_SUPPORT
-                i++;
-                parseANSI(buffer, &i);
-#else
-                while (buffer[i] != 'm')
-                    i++; // ignores escape code, assumes valid format
-                i++;
-#endif
-                break;
-            case 'r':
-                printf("\r");
-                i++;
-                break;
-            case '\\':
-                i++;
-            default:
-                putchar(buffer[i]);
-                break;
-            }
-            break;
-        case '$':
-            if (buffer[i + 1] == '?')
-            {
-                printf("%d", last_command_output);
-                i++;
-                break;
-            }
-        default:
-            putchar(buffer[i]);
-            break;
+            printf(" ");
         }
     }
     printf("\n");
     return 0;
 }
 
-int help(void)
+int help(int argc, char **argv)
 {
+    (void)argc; // Unused
+    (void)argv; // Unused
+
     printf("Available commands:\n");
-    for (int i = 0; i < sizeof(commands) / sizeof(Command); i++)
+    for (int i = 0; i < COMMAND_COUNT; i++)
     {
-        printf("%s%s\t ---\t%s\n", commands[i].name, strlen(commands[i].name) < 4 ? "\t" : "", commands[i].description);
+        printf("  %s\t- %s\n", commands[i].name, commands[i].description);
     }
-    printf("\n");
+    printf("\nUse 'man <command>' for more information.\n");
     return 0;
 }
 
-int clear(void)
+int clear(int argc, char **argv)
 {
+    (void)argc; // Unused
+    (void)argv; // Unused
+
     clearScreen();
     return 0;
 }
 
-int exit(void)
+int exit_shell(int argc, char **argv)
 {
-    char *buffer = strtok(NULL, " ");
-    int aux = 0;
-    sscanf(buffer, "%d", &aux);
-    return aux;
+    int exit_code = 0;
+
+    if (argc > 1)
+    {
+        sscanf(argv[1], "%d", &exit_code);
+    }
+
+    return exit_code;
 }
 
-int font(void)
+int font(int argc, char **argv)
 {
-    char *arg = strtok(NULL, " ");
-    if (strcasecmp(arg, "increase") == 0)
+    if (argc < 2)
+    {
+        fprintf(FD_STDERR, "Usage: %s\n", commands[4].usage);
+        return 1;
+    }
+
+    if (strcasecmp(argv[1], "increase") == 0)
     {
         return increaseFontSize();
     }
-    else if (strcasecmp(arg, "decrease") == 0)
+    else if (strcasecmp(argv[1], "decrease") == 0)
     {
         return decreaseFontSize();
     }
 
-    perror("Invalid argument\n");
-    return 0;
+    fprintf(FD_STDERR, "Invalid argument: %s\n", argv[1]);
+    fprintf(FD_STDERR, "Usage: %s\n", commands[4].usage);
+    return 1;
 }
 
-int man(void)
+int man(int argc, char **argv)
 {
-    char *command = strtok(NULL, " ");
-
-    if (command == NULL)
+    if (argc < 2)
     {
-        perror("No argument provided\n");
+        fprintf(FD_STDERR, "Usage: man <command>\n");
         return 1;
     }
 
-    for (int i = 0; i < sizeof(commands) / sizeof(Command); i++)
+    for (int i = 0; i < COMMAND_COUNT; i++)
     {
-        if (strcasecmp(commands[i].name, command) == 0)
+        if (strcasecmp(commands[i].name, argv[1]) == 0)
         {
-            printf("Command: %s\nInformation: %s\n", commands[i].name, commands[i].description);
+            printf("Command: %s\n", commands[i].name);
+            printf("Usage: %s\n", commands[i].usage);
+            printf("Description: %s\n", commands[i].description);
+            printf("Type: %s\n", commands[i].type == CMD_BUILTIN ? "Built-in" : "Process");
             return 0;
         }
     }
 
-    perror("Command not found\n");
+    fprintf(FD_STDERR, "Command not found: %s\n", argv[1]);
     return 1;
 }
 
-int regs(void)
+int regs(int argc, char **argv)
 {
+    (void)argc; // Unused
+    (void)argv; // Unused
+
     const static char *register_names[] = {
         "rax", "rbx", "rcx", "rdx", "rbp", "rdi", "rsi", "r8 ", "r9 ", "r10", "r11", "r12", "r13", "r14", "r15", "rsp", "rip", "rflags"};
 
@@ -297,48 +387,3 @@ int regs(void)
 
     return 0;
 }
-
-int test_processes_wrapper(void)
-{
-    // Parse arguments from strtok
-    char *args[10];
-    int argc = 0;
-    char *arg;
-
-    while ((arg = strtok(NULL, " ")) != NULL && argc < 10)
-    {
-        args[argc++] = arg;
-    }
-
-    if (argc == 0)
-    {
-        printf("Usage: test_processes <max_processes>\n");
-        printf("Example: test_processes 5\n");
-        return -1;
-    }
-
-    // Create a process that runs test_processes instead of calling it directly
-    printf("Creating test_processes process...\n");
-    
-    int pid = createProcess(
-        "test_processes",           // name
-        (int (*)(int, char **))test_processes,  // entry point (cast to correct signature)
-        argc,                       // argument count
-        args,                       // arguments
-        1,                          // priority
-        0                           // background (changed from 1 to 0)
-    );
-
-    if (pid < 0)
-    {
-        printf("Error: Could not create test_processes process\n");
-        return -1;
-    }
-
-    printf("test_processes process created with PID: %d\n", pid);
-    printf("The process is running in background. Use 'ps' to see all processes.\n");
-    printf("Use 'kill %d' to stop the test if needed.\n", pid);
-    
-    return 0;
-}
-  
