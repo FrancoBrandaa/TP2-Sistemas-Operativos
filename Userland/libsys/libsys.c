@@ -120,27 +120,27 @@ int32_t free(void *ptr)
 }
 
 // Process management wrappers
-int32_t createProcess(const char *name, int (*entry)(int, char **), int argc, char **argv, int priority, int foreground)
+long createProcess(const char *name, int (*entry)(int, char **), int argc, char **argv, int priority, int foreground)
 {
     return sys_create_process(name, entry, argc, argv, priority, foreground);
 }
 
-int32_t getpid(void)
+long getpid(void)
 {
     return sys_getpid();
 }
 
-int32_t kill(int32_t pid)
+int32_t kill(long pid)
 {
     return sys_kill(pid);
 }
 
-int32_t block(int32_t pid)
+int32_t block(long pid)
 {
     return sys_block(pid);
 }
 
-int32_t unblock(int32_t pid)
+int32_t unblock(long pid)
 {
     return sys_unblock(pid);
 }
@@ -150,7 +150,7 @@ void *ps(void)
     return sys_ps();
 }
 
-int32_t changePriority(int32_t pid, int32_t priority)
+int32_t changePriority(long pid, int32_t priority)
 {
     return sys_change_priority(pid, priority);
 }
@@ -160,7 +160,7 @@ int32_t yield(void)
     return sys_yield();
 }
 
-int32_t wait(int32_t pid, int32_t *wstatus)
+int32_t wait(long pid, int32_t *wstatus)
 {
     return sys_wait(pid, wstatus);
 }

@@ -20,13 +20,13 @@ void initScheduler();
  * Parameters:
  *   pcb - Pointer to the process control block of the process to schedule.
  */
-void schedule(Process * pcb);
+void schedule(Process *pcb);
 
 /*
  * Removes and retrieves the next process from the scheduler queue.
  * Returns a pointer to the process control block of the unscheduled process.
  */
-Process * unschedule();
+Process *unschedule();
 
 /*
  * Switches the CPU context to the next process.
@@ -34,13 +34,13 @@ Process * unschedule();
  *   rsp - Pointer to the current stack pointer.
  * Returns the stack pointer of the next process.
  */
-uint64_t * switchContext(uint64_t * rsp);
+uint64_t *switchContext(uint64_t *rsp);
 
 /*
  * Retrieves the process currently being executed.
  * Returns a pointer to the process control block of the current process.
  */
-Process * getCurrentProcess();
+Process *getCurrentProcess();
 
 /*
  * Blocks a process by its PID.
@@ -73,5 +73,11 @@ void clearYield();
  * Returns 1 if the yield flag is set, or 0 otherwise.
  */
 char getYield();
+
+/*
+ * Causes the current process to yield the CPU voluntarily.
+ * Returns 1 on success.
+ */
+int yield();
 
 #endif

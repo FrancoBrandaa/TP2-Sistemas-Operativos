@@ -216,13 +216,13 @@ int main()
     clear(0, NULL);
 
     // // TEST_PRIO - Test de prioridades
-    // printf("\e[1;36m=== INICIANDO TEST_PRIO ===\e[0m\n");
-    // printf("Este test crea 3 procesos con diferentes prioridades.\n");
-    // printf("Deberías ver diferencias en el orden de finalización.\n\n");
+    printf("\e[1;36m=== INICIANDO TEST_PRIO ===\e[0m\n");
+    printf("Este test crea 3 procesos con diferentes prioridades.\n");
+    printf("Deberías ver diferencias en el orden de finalización.\n\n");
 
-    // char *prio_argv[] = {"100000000"}; // Max value para contar
-    // test_prio(1, prio_argv);
-    // printf("\n\e[1;32m=== TEST_PRIO FINALIZADO ===\e[0m\n\n");
+    char *prio_argv[] = {"100000000"}; // Max value para contar
+    test_prio(1, prio_argv);
+    printf("\n\e[1;32m=== TEST_PRIO FINALIZADO ===\e[0m\n\n");
     // // ========================================================================
 
     // // MY_TEST_PROCESSES - Version mejorada con colores y delays

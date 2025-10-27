@@ -358,7 +358,7 @@ int32_t sys_free(void *ptr)
 // Process management system calls
 // ==================================================================
 
-int32_t sys_create_process(const char *name, int (*entry)(int, char **), int argc, char **argv, int priority, int foreground)
+long sys_create_process(const char *name, int (*entry)(int, char **), int argc, char **argv, int priority, int foreground)
 {
 	creationParameters params;
 	params.name = (char *)name;
@@ -371,23 +371,23 @@ int32_t sys_create_process(const char *name, int (*entry)(int, char **), int arg
 	return createProcess(&params);
 }
 
-int32_t sys_getpid(void)
+long sys_getpid(void)
 {
 	return getpid();
 }
 
-int32_t sys_kill(int32_t pid)
+int32_t sys_kill(long pid)
 {
 	return kill(pid);
 }
 
-int32_t sys_block(int32_t pid)
+int32_t sys_block(long pid)
 {
 	if(pid == 1 || !isValidPID(pid)) return -1; //El usuario no puede bloquear el proceso init
 	return blockProcess(pid);
 }
 
-int32_t sys_unblock(int32_t pid)
+int32_t sys_unblock(long pid)
 {
 	return unblockProcess(pid);
 }
@@ -397,7 +397,7 @@ void *sys_ps(void)
 	return getProcessesInformation();
 }
 
-int32_t sys_change_priority(int32_t pid, int32_t priority)
+int32_t sys_change_priority(long pid, int32_t priority)
 {
 	return changeProccessPriority(pid, priority);
 }
@@ -408,8 +408,9 @@ int32_t sys_yield(void)
 	return 0;
 }
 
-int32_t sys_wait(int32_t pid, int *wstatus)
+int32_t sys_wait(long pid, int *wstatus)
 {
+	//posible checkeo por si hace falta?
 	waitProcess(pid, wstatus);
 	return 0;
 }

@@ -7,7 +7,6 @@
 #include <scheduler.h>
 #include <video.h>
 #include <lib.h>
-// #include <fileDescriptors.h>
 
 #define SHELLPID 2
 
@@ -304,13 +303,29 @@ Process *getProcessesInformation()
  */
 void waitProcess(PID pidToWait, int *wstatus)
 {
-    PID mypid = getpid();
-    Process *processToWait = getProcess(pidToWait);
-    if (processToWait == NULL)
+    if (pidToWait <= 0 || pidToWait > MAX_PID)
         return;
 
+    PID mypid = getpid();
+    Process *processToWait = &processes[pidToWait - 1];
+
+    //Si el proceso ya hizo exit, solo retorno
+    if (processToWait->state == EXITED)
+    {
+        if (wstatus != NULL)
+        {
+            *wstatus = 0; // Proceso ya hizo exit
+        }
+        return;
+    }
+
     processToWait->waitPid = mypid;
+
+    // Bloquea el proceso y fuerza el cambio de contexto
     blockProcess(mypid);
+    forceSwitchContext();
+
+    // Cuando se despierta leo el valor de retorno
     if (wstatus != NULL)
     {
         *wstatus = processToWait->waitReturnValue;
@@ -377,9 +392,44 @@ int changeProccessPriority(PID pid, Priority priority)
         return -1;
     }
 
-    processes[pid - 1].priority = priority;
+    Process *pcb = &processes[pid - 1];
+
+    // If priority hasn't changed, nothing to do
+    if (pcb->priority == priority)
+    {
+        return 0;
+    }
+
+    Priority oldPriority = pcb->priority;
+    pcb->priority = priority;
+
+    // If the process is currently running, yield to reschedule it with new priority
+    Process *currentProc = getCurrentProcess();
+    if (currentProc != NULL && pcb->pid == currentProc->pid)
+    {
+        yield(); // Force reschedule with new priority
+    }
+
+    // Si el proceso esta READY, el cambio de prioridad va a tener efecto la proxima vez
+    // que se lo agende en la cola. No podemos moverlo entre colas sin hacer
+    //  una operacion de remover de la cola actual.
+
+    // Si el proceso esta BLOCKED, la nueva prioridad va a ser usada cuando este sea desbloqueado
 
     return 0;
+}
+
+Process *getTerminalForegroundProcess()
+{
+    for (int i = 0; i < MAX_PROCESSES; i++)
+    {
+        if (processes[i].foreground && processes[i].state != EXITED &&
+            processes[i].pid != INITPID && processes[i].pid != SHELLPID)
+        {
+            return &processes[i];
+        }
+    }
+    return NULL;
 }
 
 // int getFileDescriptors(int *fds){
@@ -417,16 +467,3 @@ int changeProccessPriority(PID pid, Priority priority)
 //     }
 //     return NULL;
 // }
-
-Process *getTerminalForegroundProcess()
-{
-    for (int i = 0; i < MAX_PROCESSES; i++)
-    {
-        if (processes[i].foreground && processes[i].state != EXITED &&
-            processes[i].pid != INITPID && processes[i].pid != SHELLPID)
-        {
-            return &processes[i];
-        }
-    }
-    return NULL;
-}

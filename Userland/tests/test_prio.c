@@ -17,7 +17,7 @@ extern void zero_to_max();
 
 uint64_t test_prio(uint64_t argc, char *argv[])
 {
-    int64_t pids[TOTAL_PROCESSES];
+    long pids[TOTAL_PROCESSES];
     char *ztm_argv[] = {0};
     uint64_t i;
 
@@ -50,7 +50,7 @@ uint64_t test_prio(uint64_t argc, char *argv[])
 
     for (i = 0; i < TOTAL_PROCESSES; i++)
         my_wait(pids[i]);
-
+    //espera a que terminen los procesos y luego imprime el mensaje
     printf("SAME PRIORITY, THEN CHANGE IT WHILE BLOCKED...\n");
 
     for (i = 0; i < TOTAL_PROCESSES; i++)
@@ -61,8 +61,11 @@ uint64_t test_prio(uint64_t argc, char *argv[])
         printf("  PROCESS %d NEW PRIORITY: %d\n", pids[i], prio[i]);
     }
 
-    for (i = 0; i < TOTAL_PROCESSES; i++)
+    for (i = 0; i < TOTAL_PROCESSES; i++){
         my_unblock(pids[i]);
+        printf("  PROCESS %d UNBLOCKED\n", pids[i]);
+    }
+      
 
     // Expect the priorities to take effect
 

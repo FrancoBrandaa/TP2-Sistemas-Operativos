@@ -84,19 +84,21 @@ void endless_loop_print(uint64_t wait)
   }
 }
 
-// Wrappers for test_prio compatibility
-int64_t my_getpid()
+// Wrappers for test_prio ----------------------
+long my_getpid()
 {
   return getpid();
 }
 
-int64_t my_create_process(char *name, uint32_t priority, char **argv)
+long my_create_process(char *name, uint32_t priority, char **argv)
 {
   extern int zero_to_max_wrapper(int argc, char **argv);
-  return createProcess(name, zero_to_max_wrapper, 0, argv, priority, 1);
+  // Use default priority (1) if priority is 0, otherwise use the provided priority
+  int actual_priority = (priority == 0) ? 1 : priority;
+  return createProcess(name, zero_to_max_wrapper, 0, argv, actual_priority, 1);
 }
 
-int32_t my_nice(int32_t pid, int32_t priority)
+int32_t my_nice(long pid, int32_t priority)
 {
   return changePriority(pid, priority);
 }
@@ -106,17 +108,17 @@ int32_t my_kill(int32_t pid)
   return kill(pid);
 }
 
-int32_t my_block(int32_t pid)
+int32_t my_block(long pid)
 {
   return block(pid);
 }
 
-int32_t my_unblock(int32_t pid)
+int32_t my_unblock(long pid)
 {
   return unblock(pid);
 }
 
-int32_t my_wait(int32_t pid)
+int32_t my_wait(long pid)
 {
   return wait(pid, NULL);
 }

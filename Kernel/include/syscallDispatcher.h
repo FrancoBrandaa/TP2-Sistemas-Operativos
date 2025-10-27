@@ -75,15 +75,15 @@ void *sys_malloc(int size);
 int32_t sys_free(void *ptr);
 
 // Process management syscall prototypes
-int32_t sys_create_process(const char *name, int (*entry)(int, char **), int argc, char **argv, int priority, int foreground);
-int32_t sys_getpid(void);
-int32_t sys_kill(int32_t pid);
-int32_t sys_block(int32_t pid);
-int32_t sys_unblock(int32_t pid);
+long sys_create_process(const char *name, int (*entry)(int, char **), int argc, char **argv, int priority, int foreground);
+long sys_getpid(void);
+int32_t sys_kill(long pid);
+int32_t sys_block(long pid);
+int32_t sys_unblock(long pid);
 void *sys_ps(void);
-int32_t sys_change_priority(int32_t pid, int32_t priority);
+int32_t sys_change_priority(long pid, int32_t priority);
 int32_t sys_yield(void);
-int32_t sys_wait(int32_t pid, int *wstatus);
+int32_t sys_wait(long pid, int *wstatus);
 
 // Semaphore syscall prototypes
 int32_t sys_sem_open(const char *name, int value);

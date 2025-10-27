@@ -66,23 +66,23 @@ int32_t sys_free(void *ptr);
 
 /* Process management syscalls */
 /* 0x80000200 */
-int32_t sys_create_process(const char *name, int (*entryPoint)(int, char **), int argc, char **argv, int priority, int foreground);
+long sys_create_process(const char *name, int (*entryPoint)(int, char **), int argc, char **argv, int priority, int foreground);
 /* 0x80000201 */
-int32_t sys_getpid(void);
+long sys_getpid(void);
 /* 0x80000202 */
-int32_t sys_kill(int32_t pid);
+int32_t sys_kill(long pid);
 /* 0x80000203 */
-int32_t sys_block(int32_t pid);
+int32_t sys_block(long pid);
 /* 0x80000204 */
-int32_t sys_unblock(int32_t pid);
+int32_t sys_unblock(long pid);
 /* 0x80000205 */
 void *sys_ps(void);
 /* 0x80000206 */
-int32_t sys_change_priority(int32_t pid, int32_t priority);
+int32_t sys_change_priority(long pid, int32_t priority);
 /* 0x80000207 */
 int32_t sys_yield(void);
 /* 0x80000208 */
-int32_t sys_wait(int32_t pid, int32_t *wstatus);
+int32_t sys_wait(long  pid, int32_t *wstatus);
 
 /* Semaphore syscalls */
 /* 0x80000300 */

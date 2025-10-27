@@ -125,15 +125,15 @@ int32_t free(void *ptr);
 
 // Process management wrappers (provided by libsys)
 // These are thin wrappers that call kernel syscalls via libsys
-int32_t createProcess(const char *name, int (*entry)(int, char **), int argc, char **argv, int priority, int foreground);
-int32_t getpid(void);
-int32_t kill(int32_t pid);
-int32_t block(int32_t pid);
-int32_t unblock(int32_t pid);
+long  createProcess(const char *name, int (*entry)(int, char **), int argc, char **argv, int priority, int foreground);
+long getpid(void);
+int32_t kill(long pid);
+int32_t block(long pid);
+int32_t unblock(long pid);
 void *ps(void);
-int32_t changePriority(int32_t pid, int32_t priority);
+int32_t changePriority(long pid, int32_t priority);
 int32_t yield(void);
-int32_t wait(int32_t pid, int32_t *wstatus);
+int32_t wait(long pid, int32_t *wstatus);
 
 // Semaphore management wrappers (provided by libsys)
 // These are thin wrappers that call kernel syscalls via libsys
