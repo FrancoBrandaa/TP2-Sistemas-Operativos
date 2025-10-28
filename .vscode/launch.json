@@ -1,0 +1,73 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Kernel (GDB + QEMU)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Kernel/kernel.bin",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set architecture to x86-64",
+                    "text": "set architecture i386:x86-64",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Set disassembly flavor to Intel",
+                    "text": "set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+            "miDebuggerServerAddress": "localhost:1234",
+            "debugServerPath": "/usr/bin/qemu-system-x86_64",
+            "debugServerArgs": "-hda ${workspaceFolder}/Image/x64BareBonesImage.qcow2 -m 512 -s -S",
+            "serverStarted": "waiting for gdb",
+            "filterStderr": true,
+            "targetArchitecture": "x64",
+            "preLaunchTask": "build-kernel"
+        },
+        {
+            "name": "Attach to QEMU (GDB)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Kernel/kernel.bin",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set architecture to x86-64",
+                    "text": "set architecture i386:x86-64",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Set disassembly flavor to Intel",
+                    "text": "set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+            "miDebuggerServerAddress": "localhost:1234"
+        }
+    ]
+}
