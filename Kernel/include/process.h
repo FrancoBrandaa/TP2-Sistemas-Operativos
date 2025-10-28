@@ -22,7 +22,6 @@ typedef struct
     Priority priority;
     entryPoint entryPoint;
     int foreground;
-    //int fds[2];
 } creationParameters;
 
 typedef struct
@@ -55,7 +54,7 @@ typedef struct
 // typedef struct
 // {
 //     char name[MAX_NAME_LENGTH];
-//     PID pid, parentpid, waitingPID;
+//     PID pid, waitingPID;
 //     int argc;
 //     char **argv;
 //     Priority priority;
@@ -63,7 +62,6 @@ typedef struct
 //     int foreground;
 //     ProcessState state;
 //     uint64_t *stackBase, *stackEnd;
-//     int childReturnValue;
 //     int fds[2]; // File descriptors
 // } Process;
 
