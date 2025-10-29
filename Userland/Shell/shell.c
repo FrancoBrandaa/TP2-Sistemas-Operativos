@@ -41,6 +41,7 @@ int regs(int argc, char **argv);
 
 /* Process wrappers for test programs */
 int counter_wrapper(int argc, char **argv);
+int loop_ps_wrapper(int argc, char **argv);
 
 /* ============================================================================
  * KEYBOARD CALLBACK DECLARATIONS
@@ -115,7 +116,13 @@ Command commands[] = {
      .description = "Test: Counts from 1 to N and exits",
      .usage = "counter [max_count]",
      .type = CMD_PROCESS,
-     .handler.process = {.entrypoint = counter_wrapper, .priority = 1, .is_background = 0}},
+     .handler.process = {.entrypoint = counter_wrapper, .priority = 3, .is_background = 0}},
+
+    {.name = "loop_ps",
+     .description = "Test: Runs ps in a loop to monitor shell state",
+     .usage = "loop_ps",
+     .type = CMD_PROCESS,
+     .handler.process = {.entrypoint = loop_ps_wrapper, .priority = 3, .is_background = 1}},
 };
 
 Command *find_command(const char *name)
@@ -241,6 +248,8 @@ int main()
     // char *test_argv[] = {"3"}; // Crear 3 procesos
     // my_test_processes(1, test_argv);
     // // ========================================================================
+
+    // ps(NULL, NULL);
 
     registerKey(KP_UP_KEY, printPreviousCommand);
     registerKey(KP_DOWN_KEY, printNextCommand);
@@ -567,4 +576,73 @@ int counter_wrapper(int argc, char **argv)
 
     printf("\n\e[0;32m[Process %d] Done! Counted to %d\e[0m\n", pid, max);
     return max; // Return the count as exit status
+}
+
+/**
+ * loop_ps_wrapper - Ejecuta ps cada segundo para monitorear el estado de la shell
+ *
+ * Usage: loop
+ *
+ * Este comando es útil para verificar que la shell se bloquea correctamente
+ * cuando NO estás escribiendo. Ejecuta en background y verás el estado
+ * de todos los procesos cada segundo.
+ */
+int loop_ps_wrapper(int argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+
+    int64_t my_pid = getpid();
+    const char *stateNames[] = {"READY", "RUNNING", "BLOCKED", "EXITED"};
+
+    printf("\e[1;33m[Process %d] Monitoring shell state. Press any key to see shell unblock.\e[0m\n\n", my_pid);
+
+    for (int iteration = 0; iteration < 20; iteration++) // 20 segundos de monitoreo
+    {
+        Process *processes = getProcessList();
+
+        if (processes != NULL)
+        {
+            printf("\e[1;36m--- Iteration %d ---\e[0m\n", iteration + 1);
+
+            // Buscar y mostrar solo el proceso de la shell (PID 2)
+            for (int i = 0; processes[i].pid != NONPID; i++)
+            {
+                if (processes[i].pid == 2) // Shell PID
+                {
+                    const char *stateName = (processes[i].state >= 0 && processes[i].state <= 3)
+                                                ? stateNames[processes[i].state]
+                                                : "UNKNOWN";
+
+                    const char *stateColor;
+                    switch (processes[i].state)
+                    {
+                    case RUNNING:
+                        stateColor = "\e[1;32m";
+                        break;
+                    case READY:
+                        stateColor = "\e[0;32m";
+                        break;
+                    case BLOCKED:
+                        stateColor = "\e[0;33m";
+                        break;
+                    default:
+                        stateColor = "\e[0m";
+                        break;
+                    }
+
+                    printf("Shell (PID %d): %s%s\e[0m\n",
+                           processes[i].pid, stateColor, stateName);
+                    break;
+                }
+            }
+
+            free(processes);
+        }
+
+        bussy_wait(1000000000); // Wait 1 second
+    }
+
+    printf("\e[1;32m[Process %d] Monitoring complete.\e[0m\n", my_pid);
+    return 0;
 }

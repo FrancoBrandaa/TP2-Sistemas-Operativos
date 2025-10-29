@@ -1,6 +1,7 @@
 include Makefile.inc
 
 KERNEL=kernel.bin
+KERNEL_ELF=kernel.elf
 SOURCES=$(wildcard *.c ./drivers/*.c ./idt/*.c ./process/*.c)
 SOURCES_ASM=$(wildcard asm/*.asm)
 HOT_OBJECTS=./drivers/video.o fonts.o # Compiled with -O3
@@ -22,8 +23,11 @@ STATICLIBS=
 
 all: $(KERNEL)
 
-$(KERNEL): $(LOADEROBJECT) $(OBJECTS) $(STATICLIBS) $(OBJECTS_ASM)
-	$(LD) $(LDFLAGS) -T kernel.ld -o $(KERNEL) $(LOADEROBJECT) $(OBJECTS) $(OBJECTS_ASM) $(STATICLIBS)
+$(KERNEL): $(KERNEL_ELF)
+	$(OBJCOPY) -O binary $(KERNEL_ELF) $(KERNEL)
+
+$(KERNEL_ELF): $(LOADEROBJECT) $(OBJECTS) $(STATICLIBS) $(OBJECTS_ASM)
+	$(LD) $(LDFLAGS) -T kernel_elf.ld -o $(KERNEL_ELF) $(LOADEROBJECT) $(OBJECTS) $(OBJECTS_ASM) $(STATICLIBS)
 
 $(HOT_OBJECTS) : %.o: %.c
 	$(GCC) -O3 $(GCCFLAGS) -I./include -c $< -o $@
@@ -41,7 +45,7 @@ $(LOADEROBJECT):
 	$(ASM) $(ASMFLAGS) $(LOADERSRC) -o $(LOADEROBJECT)
 
 clean:
-	rm -rf */*.o *.o *.bin
+	rm -rf */*.o *.o *.bin *.elf
 
 # Memory manager selection targets
 naive:

@@ -186,9 +186,14 @@ info registers rax rbx rcx      # Ver registros específicos
 ## Arquitectura del Sistema
 
 - **Arquitectura:** x86-64
-- **Kernel:** `/home/mgarciapuente/TP2-Sistemas-Operativos/Kernel/kernel.bin`
+- **Kernel Binario:** `/home/mateuss/SO/TP2-Sistemas-Operativos/Kernel/kernel.bin` (formato binario plano para bootloader)
+- **Kernel Debug:** `/home/mateuss/SO/TP2-Sistemas-Operativos/Kernel/kernel.elf` (formato ELF con símbolos de debug)
 - **Entry Point:** `_start` en `loader.asm`
 - **Puerto GDB:** 1234
+
+**Nota importante:** El proceso de compilación genera dos archivos:
+- `kernel.elf`: Ejecutable ELF con símbolos de debug completos (usado por GDB)
+- `kernel.bin`: Binario plano (usado por el bootloader QEMU)
 
 ## Recursos Adicionales
 

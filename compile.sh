@@ -70,3 +70,11 @@ echo "${GREEN}✅ Compilation finished successfully with $MEMORY_MANAGER memory 
 # Show memory manager status
 echo "${BLUE}📊 Memory Manager Status:${NC}"
 docker exec -it "$CONTAINER_NAME" make status -C /root/ 2>/dev/null || echo "${YELLOW}ℹ️  Status command not available${NC}"
+
+# Fix file permissions (files created by Docker belong to root)
+echo "${BLUE}🔧 Fixing file permissions...${NC}"
+HOST_UID=$(id -u)
+HOST_GID=$(id -g)
+docker exec "$CONTAINER_NAME" sh -c "chown -R ${HOST_UID}:${HOST_GID} /root"
+echo "${GREEN}✅ File permissions fixed!${NC}"
+

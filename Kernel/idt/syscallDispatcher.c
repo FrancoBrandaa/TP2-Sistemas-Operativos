@@ -383,7 +383,8 @@ int32_t sys_kill(long pid)
 
 int32_t sys_block(long pid)
 {
-	if(pid == 1 || !isValidPID(pid)) return -1; //El usuario no puede bloquear el proceso init
+	if (pid == 1 || !isValidPID(pid))
+		return -1; // El usuario no puede bloquear el proceso init
 	return blockProcess(pid);
 }
 
@@ -410,12 +411,10 @@ int32_t sys_yield(void)
 
 int32_t sys_wait(long pid, int *wstatus)
 {
-	//posible checkeo por si hace falta?
+	// posible checkeo por si hace falta?
 	waitProcess(pid, wstatus);
 	return 0;
 }
-
-
 
 // ==================================================================
 // Semaphore system calls
@@ -423,57 +422,63 @@ int32_t sys_wait(long pid, int *wstatus)
 
 int32_t sys_sem_open(const char *name, int value)
 {
-    int semId;
-    
-    if (name == NULL) {
-        return -1;
-    }
+	int semId;
 
-    if (findSemByName(name) < 0) {
-        semId = semCreate(name, value);
+	if (name == NULL)
+	{
+		return -1;
+	}
 
-        if (semId < 0) {
-            return -1;
-        }
+	if (findSemByName(name) < 0)
+	{
+		semId = semCreate(name, value);
 
-        return semId;
-    }
-    return semOpen(name);
+		if (semId < 0)
+		{
+			return -1;
+		}
+
+		return semId;
+	}
+	return semOpen(name);
 }
 
 int32_t sys_sem_close(int semId)
 {
-    return semClose(semId);
+	return semClose(semId);
 }
 
 void sys_sem_wait(int semId)
 {
-    if (semId < 0 || !semExists(semId)) {
-        return;
-    }
+	if (semId < 0 || !semExists(semId))
+	{
+		return;
+	}
 
-    semWait(semId);
+	semWait(semId);
 }
 
 void sys_sem_post(int semId)
 {
-    if (semId < 0 || !semExists(semId)) {
-        return;
-    }
+	if (semId < 0 || !semExists(semId))
+	{
+		return;
+	}
 
-    semPost(semId);
+	semPost(semId);
 }
 
 int32_t sys_sem_value(int semId)
 {
-    return semValue(semId);
+	return semValue(semId);
 }
 
 void sys_sem_destroy(int semId)
 {
-    if (semId < 0 || !semExists(semId)) {
-        return;
-    }
+	if (semId < 0 || !semExists(semId))
+	{
+		return;
+	}
 
-    semDestroy(semId);
+	semDestroy(semId);
 }
