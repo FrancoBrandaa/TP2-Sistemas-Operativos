@@ -10,6 +10,9 @@ static char buffer[64] = {0};
 
 static uint32_t uintToBase(uint64_t value, char * buffer, uint32_t base);
 static void printBase(int fd, int num, int base);
+static void printBaseUnsigned(int fd, unsigned int num, int base);
+static void printBaseLong(int fd, long num, int base);
+static void printBaseUnsignedLong(int fd, unsigned long num, int base);
 // static void printFloat(int fd, float num);
 
 void puts(const char * str) {
@@ -36,6 +39,15 @@ void vfprintf(int fd, const char * format, va_list args) {
             switch (format[i]) {
                 case 'x': printBase(fd, va_arg(args, int), 16); break ;
                 case 'd': printBase(fd, va_arg(args, int), 10); break ;
+                case 'u': printBaseUnsigned(fd, va_arg(args, unsigned int), 10); break ;
+                case 'l':
+                    i++; // consume next character
+                    if (format[i] == 'd') {
+                        printBaseLong(fd, va_arg(args, long), 10);
+                    } else if (format[i] == 'u') {
+                        printBaseUnsignedLong(fd, va_arg(args, unsigned long), 10);
+                    }
+                    break ;
                 case 'o': printBase(fd, va_arg(args, int), 8); break ;
                 case 'b': printBase(fd, va_arg(args, int), 2); break ;
                 // case 'f': printFloat(fd, va_arg(args, double)); break ;
@@ -238,6 +250,22 @@ static uint32_t uintToBase(uint64_t value, char * buffer, uint32_t base)
 
 static void printBase(int fd, int num, int base) {
     if (num < 0) fprintf(fd, "-");
+    uintToBase(num, buffer, base);
+    fprintf(fd, buffer);
+}
+
+static void printBaseUnsigned(int fd, unsigned int num, int base) {
+    uintToBase(num, buffer, base);
+    fprintf(fd, buffer);
+}
+
+static void printBaseLong(int fd, long num, int base) {
+    if (num < 0) fprintf(fd, "-");
+    uintToBase(num < 0 ? -num : num, buffer, base);
+    fprintf(fd, buffer);
+}
+
+static void printBaseUnsignedLong(int fd, unsigned long num, int base) {
     uintToBase(num, buffer, base);
     fprintf(fd, buffer);
 }

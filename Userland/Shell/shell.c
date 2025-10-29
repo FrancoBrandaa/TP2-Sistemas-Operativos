@@ -222,10 +222,10 @@ int main()
     printf("Con semáforo: resultado deterministico (debería ser 0).\n\n");
 
     // Test sin semáforo
-    printf("\e[1;31m--- Test SIN semaforo ---\e[0m\n");
-    char *sync_argv_no_sem[] = {"10", "0"}; // 100 iteraciones, sin semáforo
-    test_sync(2, sync_argv_no_sem);
-    printf("\n");
+    // printf("\e[1;31m--- Test SIN semaforo ---\e[0m\n");
+    // char *sync_argv_no_sem[] = {"100", "0"}; // 100 iteraciones, sin semáforo
+    // test_sync(2, sync_argv_no_sem);
+    // printf("\n");
 
     // Test con semáforo
     printf("\e[1;32m--- Test CON semaforo ---\e[0m\n");

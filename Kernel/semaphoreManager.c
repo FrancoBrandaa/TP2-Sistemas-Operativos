@@ -67,7 +67,7 @@ int semCreate(const char * name, int value){
 
     for (int i = 0; i < MAX_PROCESSES; i++){
         sems[semId].openedBy[i] = 0;
-    }
+    } //ningun proceso abrio todavia el semaforo
     sems[semId].openedBy[getpid()] = 1;
 
     return semId;
@@ -96,7 +96,7 @@ int semClose(int semId){
 
     return 0;
 }
-
+//
 int semWait(int semId){
     
     if (semId < 0) {
@@ -127,7 +127,7 @@ int semWait(int semId){
 
     return 0;
 }
-
+//
 int semPost(int semId){
 
     
@@ -169,7 +169,7 @@ int semDestroy(int semId){
 
     acquire_spinlock(&sems[semId].locked);
 
-    sems[semId].used = 0;
+    sems[semId].used = 0; //permite reutilizar el semaforo
 
     while (!isEmpty(sems[semId].waiting)) {
         PID pid = (PID)dequeue(sems[semId].waiting);

@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "test_util.h"
+#include <libsys.h>
 
 #define SEM_ID "test_sync"
 #define TOTAL_PAIR_PROCESSES 2
@@ -13,12 +14,11 @@ void slowInc(int64_t *p, int64_t inc) {
   aux += inc; //tiene capturado el sem no pasa nada
   *p = aux;
 }
-
 uint64_t my_process_inc(uint64_t argc, char *argv[]) {
   uint64_t n;
   int8_t inc;
   int8_t use_sem;
-  int32_t sem_index;
+  int64_t sem_index;
 
   if (argc != 3)
     return -1;
@@ -60,10 +60,11 @@ uint64_t my_process_inc(uint64_t argc, char *argv[]) {
   if (use_sem){
     semClose(sem_index);
   }
-    
 
+  printf("Process %d done, and global = %u\n", getpid(), global);
   return 0;
 }
+
 
 uint64_t test_sync(uint64_t argc, char *argv[]) { //{n, use_sem, 0}
   uint64_t pids[2 * TOTAL_PAIR_PROCESSES];
@@ -79,9 +80,11 @@ uint64_t test_sync(uint64_t argc, char *argv[]) { //{n, use_sem, 0}
   uint64_t i;
   for (i = 0; i < TOTAL_PAIR_PROCESSES; i++) {
     // Crear procesos decrementadores
-    pids[i] = createProcess("my_process_inc", (int (*)(int, char **))my_process_inc, 3, argvDec, 1, 0);
+    pids[i] = createProcess("my_process_inc", (uint64_t (*)(uint64_t, char **))my_process_inc, 3, argvDec, 5, 0);
+    printf("Created decrementing process with PID %d\n", pids[i]);
     // Crear procesos incrementadores
-    pids[i + TOTAL_PAIR_PROCESSES] = createProcess("my_process_inc", (int (*)(int, char **))my_process_inc, 3, argvInc, 1, 0);
+    pids[i + TOTAL_PAIR_PROCESSES] = createProcess("my_process_inc", (uint64_t (*)(uint64_t, char **))my_process_inc, 3, argvInc, 5, 0);
+    printf("Created incrementing process with PID %d\n", pids[i + TOTAL_PAIR_PROCESSES]);
   } //crea cuatro procesos, dos que incrementan y dos que decrementan
 
   for (i = 0; i < TOTAL_PAIR_PROCESSES; i++) {
@@ -92,7 +95,7 @@ uint64_t test_sync(uint64_t argc, char *argv[]) { //{n, use_sem, 0}
   int sem_index = semOpen(SEM_ID, 1);
   semDestroy(sem_index);
 
-  printf("Final value: %d\n", global);
+  printf("Final value: %u\n", global);
 
   return 0;
 }
