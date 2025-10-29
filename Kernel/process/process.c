@@ -282,7 +282,7 @@ Process *getProcessesInformation()
 {
     int count = getProcessesCount(), ansIndex = 0;
     Process *ans = allocMemory((count + 1) * sizeof(Process));
-    ans[count].pid = NONPID; // no se si lo vamos a usar :) por las dudas
+    ans[count].pid = NONPID; 
 
     for (int i = 0; i < MAX_PROCESSES && ansIndex != count; i++)
     {

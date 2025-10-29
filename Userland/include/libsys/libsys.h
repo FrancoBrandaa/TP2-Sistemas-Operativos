@@ -2,6 +2,7 @@
 #define _LIBSYS_H_
 
 #include <stdint.h>
+#include <process.h>
 
 // Enum of registerable keys.
 // Note: Does not include TAB or RETURN
@@ -125,12 +126,12 @@ int32_t free(void *ptr);
 
 // Process management wrappers (provided by libsys)
 // These are thin wrappers that call kernel syscalls via libsys
-long  createProcess(const char *name, int (*entry)(int, char **), int argc, char **argv, int priority, int foreground);
+long createProcess(const char *name, int (*entry)(int, char **), int argc, char **argv, int priority, int foreground);
 long getpid(void);
 int32_t kill(long pid);
 int32_t block(long pid);
 int32_t unblock(long pid);
-void *ps(void);
+Process *getProcessList(void); // Alias for ps() to avoid naming conflicts
 int32_t changePriority(long pid, int32_t priority);
 int32_t yield(void);
 int32_t wait(long pid, int32_t *wstatus);

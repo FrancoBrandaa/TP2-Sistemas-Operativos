@@ -82,7 +82,7 @@ int32_t sys_change_priority(long pid, int32_t priority);
 /* 0x80000207 */
 int32_t sys_yield(void);
 /* 0x80000208 */
-int32_t sys_wait(long  pid, int32_t *wstatus);
+int32_t sys_wait(long pid, int32_t *wstatus);
 
 /* Semaphore syscalls */
 /* 0x80000300 */

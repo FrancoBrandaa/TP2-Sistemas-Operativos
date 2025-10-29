@@ -39,7 +39,7 @@ set pagination off
 
 # Custom commands
 define hook-stop
-    # This runs every time execution stops
+    # This runs every time execution stoys
     # info registers
 end
 

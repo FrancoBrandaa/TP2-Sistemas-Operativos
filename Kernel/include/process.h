@@ -28,7 +28,7 @@ typedef struct
 typedef struct
 {
     char name[MAX_NAME_LENGTH];
-    PID pid;//, parentpid, waitingPID;
+    PID pid;
     int argc;
     char **argv;
     Priority priority;

@@ -6,6 +6,7 @@
 #include "command.h"
 #include <libsys.h>
 #include <exceptions.h>
+#include <process.h>
 #include "../tests/test.h"
 
 /* ============================================================================
@@ -35,6 +36,7 @@ int exit_shell(int argc, char **argv);
 int font(int argc, char **argv);
 int help(int argc, char **argv);
 int man(int argc, char **argv);
+int ps(int argc, char **argv);
 int regs(int argc, char **argv);
 
 /* Process wrappers for test programs */
@@ -96,6 +98,12 @@ Command commands[] = {
      .usage = "man <command>",
      .type = CMD_BUILTIN,
      .handler.builtin = man},
+
+    {.name = "ps",
+     .description = "Prints the list of all processes with their properties",
+     .usage = "ps",
+     .type = CMD_BUILTIN,
+     .handler.builtin = ps},
 
     {.name = "regs",
      .description = "Prints the register snapshot, if any",
@@ -216,13 +224,13 @@ int main()
     clear(0, NULL);
 
     // // TEST_PRIO - Test de prioridades
-    printf("\e[1;36m=== INICIANDO TEST_PRIO ===\e[0m\n");
-    printf("Este test crea 3 procesos con diferentes prioridades.\n");
-    printf("Deberías ver diferencias en el orden de finalización.\n\n");
+    // printf("\e[1;36m=== INICIANDO TEST_PRIO ===\e[0m\n");
+    // printf("Este test crea 3 procesos con diferentes prioridades.\n");
+    // printf("Deberías ver diferencias en el orden de finalización.\n\n");
 
-    char *prio_argv[] = {"100000000"}; // Max value para contar
-    test_prio(1, prio_argv);
-    printf("\n\e[1;32m=== TEST_PRIO FINALIZADO ===\e[0m\n\n");
+    // char *prio_argv[] = {"100000000"}; // Max value para contar
+    // test_prio(1, prio_argv);
+    // printf("\n\e[1;32m=== TEST_PRIO FINALIZADO ===\e[0m\n\n");
     // // ========================================================================
 
     // // MY_TEST_PROCESSES - Version mejorada con colores y delays
@@ -421,6 +429,77 @@ int man(int argc, char **argv)
 
     fprintf(FD_STDERR, "Command not found: %s\n", argv[1]);
     return 1;
+}
+
+int ps(int argc, char **argv)
+{
+    (void)argc; // Unused
+    (void)argv; // Unused
+
+    Process *processes = getProcessList();
+
+    if (processes == NULL)
+    {
+        fprintf(FD_STDERR, "Error: Could not retrieve process information\n");
+        return 1;
+    }
+
+    // Print header
+    printf("\nPID   NAME                 PRIO  STATE      EXECUTION\n");
+    printf("========================================================\n");
+
+    const char *stateNames[] = {"READY", "RUNNING", "BLOCKED", "EXITED"};
+
+    for (int i = 0; processes[i].pid != NONPID; i++)
+    {
+        const char *stateName = (processes[i].state >= 0 && processes[i].state <= 3)
+                                    ? stateNames[processes[i].state]
+                                    : "UNKNOWN";
+
+        // Color code based on state
+        const char *stateColor;
+        const char *resetColor = "\e[0m";
+        switch (processes[i].state)
+        {
+        case RUNNING:
+            stateColor = "\e[1;32m"; // Bright green
+            break;
+        case READY:
+            stateColor = "\e[0;32m"; // Green
+            break;
+        case BLOCKED:
+            stateColor = "\e[0;33m"; // Yellow
+            break;
+        case EXITED:
+            stateColor = "\e[0;31m"; // Red
+            break;
+        default:
+            stateColor = "";
+            resetColor = "";
+            break;
+        }
+
+        printf("%d", processes[i].pid);
+        printf("     "); // espacio
+
+        printf("%s", processes[i].name);
+        int nameLen = strlen(processes[i].name);
+        for (int j = nameLen; j < 21; j++)
+            printf(" ");
+
+        printf("%d", processes[i].priority);
+        printf("     "); // espacio después de la prioridad
+
+        printf("%s%s%s", stateColor, stateName, resetColor);
+        int stateLen = strlen(stateName);
+        for (int j = stateLen; j < 11; j++)
+            printf(" "); // medio feo pero va
+
+        printf("%s\n", processes[i].foreground ? "Foreground" : "Background");
+    }
+    printf("\n");
+    free(processes);
+    return 0;
 }
 
 int regs(int argc, char **argv)

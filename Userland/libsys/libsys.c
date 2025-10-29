@@ -1,5 +1,6 @@
 #include <libsys.h>
 #include <syscalls.h>
+#include <process.h>
 
 void startBeep(uint32_t nFrequence)
 {
@@ -145,9 +146,9 @@ int32_t unblock(long pid)
     return sys_unblock(pid);
 }
 
-void *ps(void)
+Process *getProcessList(void)
 {
-    return sys_ps();
+     return (Process *) sys_ps();
 }
 
 int32_t changePriority(long pid, int32_t priority)
@@ -195,4 +196,3 @@ void semDestroy(int semId)
 {
     sys_sem_destroy(semId);
 }
-
