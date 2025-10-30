@@ -1,0 +1,154 @@
+/**
+ * @file commands.c
+ * @brief Implementation of shell command functions
+ *
+ * This file contains process wrappers and test utilities that can be
+ * executed as shell commands. These are separated from shell.c to keep
+ * the codebase organized and maintainable.
+ */
+
+#include <stdio.h>
+#include <stdint.h>
+#include <libsys.h>
+#include <process.h>
+#include "commands.h"
+#include "../tests/test_util.h"
+
+/**
+ * counter_wrapper - Counts from 1 to N and exits
+ *
+ * Usage: counter [max]
+ *   - max: Number to count up to (default: 10)
+ *
+ * This is useful for testing:
+ *   - Foreground wait: Shell should wait until counting is done
+ *   - Background execution: Can count while you use the shell
+ *   - Process completion: Should see "Process completed" message
+ */
+int counter_wrapper(int argc, char **argv)
+{
+    int max = 10;
+    int64_t pid = getpid();
+
+    if (argc > 1)
+    {
+        max = satoi(argv[1]);
+    }
+
+    printf("\e[0;36m[Process %d] Counting to %d...\e[0m\n", pid, max);
+
+    for (int i = 1; i <= max; i++)
+    {
+        printf("\e[0;36m[%d]\e[0m %d ", pid, i);
+        if (i % 10 == 0)
+            printf("\n");
+        bussy_wait(200000000); // 200ms delay
+    }
+
+    printf("\n\e[0;32m[Process %d] Done! Counted to %d\e[0m\n", pid, max);
+    return max; // Return the count as exit status
+}
+
+/**
+ * loop_wrapper - Prints PID with greeting every N seconds
+ *
+ * Usage: loop [seconds]
+ *   - seconds: Time to wait between prints (default: 2)
+ *
+ * This function demonstrates:
+ *   - Using sleep() instead of busy waiting
+ *   - Long-running background processes
+ *   - Proper process identification
+ */
+int loop_wrapper(int argc, char **argv)
+{
+    int seconds = 2; // Default: 2 seconds
+    int64_t pid = getpid();
+
+    if (argc > 1)
+    {
+        seconds = satoi(argv[1]);
+        if (seconds <= 0)
+            seconds = 2; // Fallback to default if invalid
+    }
+
+    printf("\e[0;35m[Process %d] Starting loop with %d second interval...\e[0m\n", pid, seconds);
+
+    while (1)
+    {
+        printf("\e[0;35mSoy el proceso %d xd\e[0m\n", pid);
+        sleep(seconds * 1000); // Convert seconds to milliseconds
+    }
+
+    // This line is never reached, but included for completeness
+    return 0;
+}
+
+/**
+ * loop_ps_wrapper - Ejecuta ps cada segundo para monitorear el estado de la shell
+ *
+ * Usage: loop_ps
+ *
+ * Este comando es útil para verificar que la shell se bloquea correctamente
+ * cuando NO estás escribiendo. Ejecuta en background y verás el estado
+ * de todos los procesos cada segundo.
+ */
+int loop_ps_wrapper(int argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+
+    int64_t my_pid = getpid();
+    const char *stateNames[] = {"READY", "RUNNING", "BLOCKED", "EXITED"};
+
+    printf("\e[1;33m[Process %d] Monitoring shell state. Press any key to see shell unblock.\e[0m\n\n", my_pid);
+
+    for (int iteration = 0; iteration < 20; iteration++) // 20 segundos de monitoreo
+    {
+        Process *processes = getProcessList();
+
+        if (processes != NULL)
+        {
+            printf("\e[1;36m--- Iteration %d ---\e[0m\n", iteration + 1);
+
+            // Buscar y mostrar solo el proceso de la shell (PID 2)
+            for (int i = 0; processes[i].pid != NONPID; i++)
+            {
+                if (processes[i].pid == 2) // Shell PID
+                {
+                    const char *stateName = (processes[i].state >= 0 && processes[i].state <= 3)
+                                                ? stateNames[processes[i].state]
+                                                : "UNKNOWN";
+
+                    const char *stateColor;
+                    switch (processes[i].state)
+                    {
+                    case RUNNING:
+                        stateColor = "\e[1;32m";
+                        break;
+                    case READY:
+                        stateColor = "\e[0;32m";
+                        break;
+                    case BLOCKED:
+                        stateColor = "\e[0;33m";
+                        break;
+                    default:
+                        stateColor = "\e[0m";
+                        break;
+                    }
+
+                    printf("Shell (PID %d): %s%s\e[0m\n",
+                           processes[i].pid, stateColor, stateName);
+                    break;
+                }
+            }
+
+            free(processes);
+        }
+
+        bussy_wait(1000000000); // Wait 1 second
+    }
+
+    printf("\e[1;32m[Process %d] Monitoring complete.\e[0m\n", my_pid);
+    return 0;
+}

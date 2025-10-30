@@ -2,7 +2,7 @@
 #define SHELL_H
 
 #include <stdint.h>
-#include "command.h"
+#include "commands.h"
 
 #define MAX_BUFFER_SIZE 1024 /**< Maximum size for command input buffer */
 #define HISTORY_SIZE 10      /**< Number of commands to keep in history */

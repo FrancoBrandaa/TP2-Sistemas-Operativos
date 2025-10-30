@@ -37,22 +37,122 @@ void vfprintf(int fd, const char *format, va_list args)
             break;
 #endif
         case '%':
+        {
             i++;
+
+            // Parse flags
+            int leftAlign = 0;
+            int zeroPad = 0;
+
+            if (format[i] == '-')
+            {
+                leftAlign = 1;
+                i++;
+            }
+            else if (format[i] == '0')
+            {
+                zeroPad = 1;
+                i++;
+            }
+
+            // Parse width
+            int width = 0;
+            while (format[i] >= '0' && format[i] <= '9')
+            {
+                width = width * 10 + (format[i] - '0');
+                i++;
+            }
+
+            // Parse length modifier (l for long)
+            int isLong = 0;
+            if (format[i] == 'l')
+            {
+                isLong = 1;
+                i++;
+            }
+
+            // Parse specifier
             switch (format[i])
             {
             case 'x':
-                printBase(fd, va_arg(args, int), 16);
+            {
+                uint64_t value = isLong ? va_arg(args, uint64_t) : va_arg(args, unsigned int);
+                int len = uintToBase(value, buffer, 16);
+
+                // Apply padding
+                if (width > len)
+                {
+                    int padding = width - len;
+                    char padChar = zeroPad ? '0' : ' ';
+
+                    if (!leftAlign)
+                    {
+                        for (int j = 0; j < padding; j++)
+                            sys_write(fd, &padChar, 1);
+                    }
+
+                    fprintf(fd, buffer);
+
+                    if (leftAlign)
+                    {
+                        for (int j = 0; j < padding; j++)
+                            sys_write(fd, " ", 1);
+                    }
+                }
+                else
+                {
+                    fprintf(fd, buffer);
+                }
                 break;
+            }
             case 'd':
-                printBase(fd, va_arg(args, int), 10);
+            {
+                int value = va_arg(args, int);
+                int len;
+
+                if (value < 0)
+                {
+                    sys_write(fd, "-", 1);
+                    value = -value;
+                    len = uintToBase(value, buffer, 10) + 1;
+                }
+                else
+                {
+                    len = uintToBase(value, buffer, 10);
+                }
+
+                // Apply padding
+                if (width > len)
+                {
+                    int padding = width - len;
+                    char padChar = zeroPad ? '0' : ' ';
+
+                    if (!leftAlign)
+                    {
+                        for (int j = 0; j < padding; j++)
+                            sys_write(fd, &padChar, 1);
+                    }
+
+                    fprintf(fd, buffer);
+
+                    if (leftAlign)
+                    {
+                        for (int j = 0; j < padding; j++)
+                            sys_write(fd, " ", 1);
+                    }
+                }
+                else
+                {
+                    fprintf(fd, buffer);
+                }
                 break;
+            }
             case 'o':
                 printBase(fd, va_arg(args, int), 8);
                 break;
             case 'b':
                 printBase(fd, va_arg(args, int), 2);
                 break;
-            // case 'f': printFloat(fd, va_arg(args, double)); break ;
             case 'c':
             {
                 char c = (char)va_arg(args, int);
@@ -60,14 +160,42 @@ void vfprintf(int fd, const char *format, va_list args)
                 break;
             }
             case 's':
-                fprintf(fd, va_arg(args, char *));
+            {
+                char *str = va_arg(args, char *);
+                int len = strlen(str);
+
+                // Apply padding
+                if (width > len)
+                {
+                    int padding = width - len;
+
+                    if (!leftAlign)
+                    {
+                        for (int j = 0; j < padding; j++)
+                            sys_write(fd, " ", 1);
+                    }
+
+                    fprintf(fd, str);
+
+                    if (leftAlign)
+                    {
+                        for (int j = 0; j < padding; j++)
+                            sys_write(fd, " ", 1);
+                    }
+                }
+                else
+                {
+                    fprintf(fd, str);
+                }
                 break;
+            }
             case '%':
                 sys_write(fd, "%", 1);
                 break;
             }
             i++;
             break;
+        }
         default:
             sys_write(fd, &format[i], 1);
             i++;

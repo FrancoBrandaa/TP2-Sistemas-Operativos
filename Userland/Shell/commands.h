@@ -1,13 +1,11 @@
-#ifndef COMMAND_H
-#define COMMAND_H
-
+#ifndef COMMANDS_H
+#define COMMANDS_H
 
 typedef enum
 {
     CMD_BUILTIN, /**< Command executes directly in shell context (synchronous) */
     CMD_PROCESS, /**< Command creates and runs as a new process */
 } CommandType;
-
 
 typedef struct
 {
@@ -37,4 +35,23 @@ typedef struct
     } handler;
 } Command;
 
-#endif // COMMAND_H
+/* ============================================================================
+ * COMMAND FUNCTION DECLARATIONS
+ * ============================================================================ */
+
+/* Built-in command implementations */
+int clear(int argc, char **argv);
+int echo(int argc, char **argv);
+int exit_shell(int argc, char **argv);
+int font(int argc, char **argv);
+int help(int argc, char **argv);
+int man(int argc, char **argv);
+int ps(int argc, char **argv);
+int regs(int argc, char **argv);
+
+/* Process wrappers for test programs and utilities */
+int counter_wrapper(int argc, char **argv);
+int loop_wrapper(int argc, char **argv);
+int loop_ps_wrapper(int argc, char **argv);
+
+#endif // COMMANDS_H

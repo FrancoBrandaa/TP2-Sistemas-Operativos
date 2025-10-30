@@ -3,12 +3,13 @@
 #include <string.h>
 #include <stddef.h>
 #include "shell.h"
-#include "command.h"
+#include "commands.h"
 #include <libsys.h>
 #include <exceptions.h>
 #include <process.h>
 #include "../tests/test.h"
 
+#define DEFAULT_PRIORITY 3
 /* ============================================================================
  * INTERNAL STATE
  * ============================================================================ */
@@ -38,10 +39,6 @@ int help(int argc, char **argv);
 int man(int argc, char **argv);
 int ps(int argc, char **argv);
 int regs(int argc, char **argv);
-
-/* Process wrappers for test programs */
-int counter_wrapper(int argc, char **argv);
-int loop_ps_wrapper(int argc, char **argv);
 
 /* ============================================================================
  * KEYBOARD CALLBACK DECLARATIONS
@@ -116,13 +113,19 @@ Command commands[] = {
      .description = "Test: Counts from 1 to N and exits",
      .usage = "counter [max_count]",
      .type = CMD_PROCESS,
-     .handler.process = {.entrypoint = counter_wrapper, .priority = 3, .is_background = 0}},
+     .handler.process = {.entrypoint = counter_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
+
+    {.name = "loop",
+     .description = "Prints PID with greeting every N seconds",
+     .usage = "loop [seconds]",
+     .type = CMD_PROCESS,
+     .handler.process = {.entrypoint = loop_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 1}},
 
     {.name = "loop_ps",
      .description = "Test: Runs ps in a loop to monitor shell state",
      .usage = "loop_ps",
      .type = CMD_PROCESS,
-     .handler.process = {.entrypoint = loop_ps_wrapper, .priority = 3, .is_background = 1}},
+     .handler.process = {.entrypoint = loop_ps_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 1}},
 };
 
 Command *find_command(const char *name)
@@ -453,11 +456,9 @@ int ps(int argc, char **argv)
         return 1;
     }
 
-    // Print header
-    printf("\nPID   NAME                 PRIO  STATE      EXECUTION\n");
-    printf("========================================================\n");
-
     const char *stateNames[] = {"READY", "RUNNING", "BLOCKED", "EXITED"};
+
+    printf("\n\e[1;36m========== PROCESS LIST ==========\e[0m\n");
 
     for (int i = 0; processes[i].pid != NONPID; i++)
     {
@@ -467,7 +468,6 @@ int ps(int argc, char **argv)
 
         // Color code based on state
         const char *stateColor;
-        const char *resetColor = "\e[0m";
         switch (processes[i].state)
         {
         case RUNNING:
@@ -483,29 +483,21 @@ int ps(int argc, char **argv)
             stateColor = "\e[0;31m"; // Red
             break;
         default:
-            stateColor = "";
-            resetColor = "";
+            stateColor = "\e[0m";
             break;
         }
 
-        printf("%d", processes[i].pid);
-        printf("     "); // espacio
-
-        printf("%s", processes[i].name);
-        int nameLen = strlen(processes[i].name);
-        for (int j = nameLen; j < 21; j++)
-            printf(" ");
-
-        printf("%d", processes[i].priority);
-        printf("     "); // espacio después de la prioridad
-
-        printf("%s%s%s", stateColor, stateName, resetColor);
-        int stateLen = strlen(stateName);
-        for (int j = stateLen; j < 11; j++)
-            printf(" "); // medio feo pero va
-
-        printf("%s\n", processes[i].foreground ? "Foreground" : "Background");
+        // Print each process as a block
+        printf("\n\e[1;34mPID:\e[0m          %d\n", processes[i].pid);
+        printf("\e[1;34mName:\e[0m         %s\n", processes[i].name);
+        printf("\e[1;34mPriority:\e[0m     %d\n", processes[i].priority);
+        printf("\e[1;34mState:\e[0m        %s%s\e[0m\n", stateColor, stateName);
+        printf("\e[1;34mStack Base:\e[0m   0x%016lx\n", (uint64_t)processes[i].stackBase);
+        printf("\e[1;34mStack Ptr:\e[0m    0x%016lx\n", (uint64_t)processes[i].stackEnd);
+        printf("\e[1;34mExecution:\e[0m    %s\n", processes[i].foreground ? "Foreground" : "Background");
+        printf("----------------------------------\n");
     }
+
     printf("\n");
     free(processes);
     return 0;
@@ -536,113 +528,5 @@ int regs(int argc, char **argv)
         printf("\e[0;34m%s\e[0m: %x\n", register_names[i], registers[i]);
     }
 
-    return 0;
-}
-
-/* ============================================================================
- * PROCESS WRAPPERS FOR TEST PROGRAMS
- * ============================================================================ */
-
-/**
- * counter_wrapper - Counts from 1 to N and exits
- *
- * Usage: counter [max]
- *   - max: Number to count up to (default: 10)
- *
- * This is useful for testing:
- *   - Foreground wait: Shell should wait until counting is done
- *   - Background execution: Can count while you use the shell
- *   - Process completion: Should see "Process completed" message
- */
-int counter_wrapper(int argc, char **argv)
-{
-    int max = 10;
-    int64_t pid = getpid();
-
-    if (argc > 1)
-    {
-        max = satoi(argv[1]);
-    }
-
-    printf("\e[0;36m[Process %d] Counting to %d...\e[0m\n", pid, max);
-
-    for (int i = 1; i <= max; i++)
-    {
-        printf("\e[0;36m[%d]\e[0m %d ", pid, i);
-        if (i % 10 == 0)
-            printf("\n");
-        bussy_wait(200000000); // 200ms delay
-    }
-
-    printf("\n\e[0;32m[Process %d] Done! Counted to %d\e[0m\n", pid, max);
-    return max; // Return the count as exit status
-}
-
-/**
- * loop_ps_wrapper - Ejecuta ps cada segundo para monitorear el estado de la shell
- *
- * Usage: loop
- *
- * Este comando es útil para verificar que la shell se bloquea correctamente
- * cuando NO estás escribiendo. Ejecuta en background y verás el estado
- * de todos los procesos cada segundo.
- */
-int loop_ps_wrapper(int argc, char **argv)
-{
-    (void)argc;
-    (void)argv;
-
-    int64_t my_pid = getpid();
-    const char *stateNames[] = {"READY", "RUNNING", "BLOCKED", "EXITED"};
-
-    printf("\e[1;33m[Process %d] Monitoring shell state. Press any key to see shell unblock.\e[0m\n\n", my_pid);
-
-    for (int iteration = 0; iteration < 20; iteration++) // 20 segundos de monitoreo
-    {
-        Process *processes = getProcessList();
-
-        if (processes != NULL)
-        {
-            printf("\e[1;36m--- Iteration %d ---\e[0m\n", iteration + 1);
-
-            // Buscar y mostrar solo el proceso de la shell (PID 2)
-            for (int i = 0; processes[i].pid != NONPID; i++)
-            {
-                if (processes[i].pid == 2) // Shell PID
-                {
-                    const char *stateName = (processes[i].state >= 0 && processes[i].state <= 3)
-                                                ? stateNames[processes[i].state]
-                                                : "UNKNOWN";
-
-                    const char *stateColor;
-                    switch (processes[i].state)
-                    {
-                    case RUNNING:
-                        stateColor = "\e[1;32m";
-                        break;
-                    case READY:
-                        stateColor = "\e[0;32m";
-                        break;
-                    case BLOCKED:
-                        stateColor = "\e[0;33m";
-                        break;
-                    default:
-                        stateColor = "\e[0m";
-                        break;
-                    }
-
-                    printf("Shell (PID %d): %s%s\e[0m\n",
-                           processes[i].pid, stateColor, stateName);
-                    break;
-                }
-            }
-
-            free(processes);
-        }
-
-        bussy_wait(1000000000); // Wait 1 second
-    }
-
-    printf("\e[1;32m[Process %d] Monitoring complete.\e[0m\n", my_pid);
     return 0;
 }
