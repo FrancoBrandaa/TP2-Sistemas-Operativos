@@ -6,3 +6,4 @@
 *.img
 *.qcow2
 *.vmdk
+*.elf
