@@ -41,6 +41,7 @@ int mem(int argc, char **argv);
 int kill_cmd(int argc, char **argv);
 int block_cmd(int argc, char **argv);
 int nice_cmd(int argc, char **argv);
+int test_cmd(int argc, char **argv);
 
 /* ============================================================================
  * KEYBOARD CALLBACK DECLARATIONS
@@ -116,6 +117,12 @@ Command commands[] = {
      .usage = "nice <pid> <priority>",
      .type = CMD_BUILTIN,
      .handler.builtin = nice_cmd},
+
+    {.name = "test",
+     .description = "Runs system tests",
+     .usage = "test [test_name]",
+     .type = CMD_BUILTIN,
+     .handler.builtin = test_cmd},
 
     {.name = "counter",
      .description = "Counts from 1 to N and exits",
@@ -737,6 +744,29 @@ int nice_cmd(int argc, char **argv)
         printf("Error: Could not change priority of process %d\n", pid);
         return -1;
     }
+
+    return 0;
+}
+
+int test_cmd(int argc, char **argv)
+{
+    if (argc < 2)
+    {
+        printf("Available tests:\n");
+        printf("  mm         - Memory manager test\n");
+        printf("  prio       - Process priority test\n");
+        printf("  processes  - Process creation test (original)\n");
+        printf("  myproc     - Process creation test (improved)\n");
+        printf("  sync       - Synchronization test\n");
+        printf("  memstatus  - Memory status test\n");
+        printf("\nUsage: test <test_name>\n");
+        return 0;
+    }
+
+    const char *test_name = argv[1];
+
+    // TODO: Implement test execution
+    printf("Test '%s' - Not implemented yet :(\nlo hacemos a lo ultimo esto\n", test_name);
 
     return 0;
 }
