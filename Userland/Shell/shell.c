@@ -106,7 +106,7 @@ Command commands[] = {
      .handler.builtin = kill_cmd},
 
     {.name = "block",
-     .description = "Blocks a process by PID",
+     .description = "Toggles process state between blocked and ready",
      .usage = "block <pid>",
      .type = CMD_BUILTIN,
      .handler.builtin = block_cmd},
@@ -627,18 +627,116 @@ int kill_cmd(int argc, char **argv)
 
 int block_cmd(int argc, char **argv)
 {
-    (void)argc; // Unused
-    (void)argv; // Unused
+    if (argc < 2)
+    {
+        printf("Usage: block <pid>\n");
+        printf("Toggles process state between blocked and ready\n");
+        return -1;
+    }
 
-    printf("block: Block process (not implemented yet)\n");
+    long pid = satoi(argv[1]);
+
+    if (pid <= 0)
+    {
+        printf("Error: Invalid PID\n");
+        return -1;
+    }
+
+    // Get current process list to check state
+    Process *processes = getProcessList();
+    if (processes == NULL)
+    {
+        printf("Error: Could not get process list\n");
+        return -1;
+    }
+
+    // Find the process and check its state
+    int found = 0;
+    int is_blocked = 0;
+    for (int i = 0; processes[i].pid != 0; i++)
+    {
+        if (processes[i].pid == pid)
+        {
+            found = 1;
+            is_blocked = (processes[i].state == BLOCKED);
+            break;
+        }
+    }
+
+    if (!found)
+    {
+        printf("Error: Process with PID %d not found\n", pid);
+        return -1;
+    }
+
+    int result;
+    if (is_blocked)
+    {
+        // Unblock the process
+        result = unblock(pid);
+        if (result == 0)
+        {
+            printf("Process %d unblocked successfully\n", pid);
+        }
+        else
+        {
+            printf("Error: Could not unblock process %d\n", pid);
+            return -1;
+        }
+    }
+    else
+    {
+        // Block the process
+        result = block(pid);
+        if (result == 0)
+        {
+            printf("Process %d blocked successfully\n", pid);
+        }
+        else
+        {
+            printf("Error: Could not block process %d\n", pid);
+            return -1;
+        }
+    }
+
     return 0;
 }
 
 int nice_cmd(int argc, char **argv)
 {
-    (void)argc; // Unused
-    (void)argv; // Unused
+    if (argc < 3)
+    {
+        printf("Usage: nice <pid> <priority>\n");
+        printf("Changes the priority of a process (1-5, where 5 is highest)\n");
+        return -1;
+    }
 
-    printf("nice: Change process priority (not implemented yet)\n");
+    long pid = satoi(argv[1]);
+    int32_t priority = satoi(argv[2]);
+
+    if (pid <= 0)
+    {
+        printf("Error: Invalid PID\n");
+        return -1;
+    }
+
+    if (priority < 1 || priority > 5)
+    {
+        printf("Error: Priority must be between 1 and 5\n");
+        return -1;
+    }
+
+    int result = nice(pid, priority);
+
+    if (result == 0)
+    {
+        printf("Process %d priority changed to %d successfully\n", pid, priority);
+    }
+    else
+    {
+        printf("Error: Could not change priority of process %d\n", pid);
+        return -1;
+    }
+
     return 0;
 }

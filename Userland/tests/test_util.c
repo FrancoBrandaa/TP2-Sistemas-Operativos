@@ -100,7 +100,7 @@ long my_create_process(char *name, uint32_t priority, char **argv)
 
 int32_t my_nice(long pid, int32_t priority)
 {
-  return changePriority(pid, priority);
+  return nice(pid, priority);
 }
 
 int32_t my_kill(int32_t pid)

@@ -151,7 +151,7 @@ Process *getProcessList(void)
      return (Process *) sys_ps();
 }
 
-int32_t changePriority(long pid, int32_t priority)
+int32_t nice(long pid, int32_t priority)
 {
     return sys_change_priority(pid, priority);
 }

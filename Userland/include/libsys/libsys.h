@@ -142,7 +142,7 @@ int32_t kill(long pid);
 int32_t block(long pid);
 int32_t unblock(long pid);
 Process *getProcessList(void); // Alias for ps() to avoid naming conflicts
-int32_t changePriority(long pid, int32_t priority);
+int32_t nice(long pid, int32_t priority);
 int32_t yield(void);
 int32_t wait(long pid, int32_t *wstatus);
 
