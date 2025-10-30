@@ -42,7 +42,6 @@ typedef struct
 /* Built-in command implementations */
 int clear(int argc, char **argv);
 int echo(int argc, char **argv);
-int exit_shell(int argc, char **argv);
 int font(int argc, char **argv);
 int help(int argc, char **argv);
 int man(int argc, char **argv);

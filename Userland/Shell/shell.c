@@ -5,7 +5,6 @@
 #include "shell.h"
 #include "commands.h"
 #include <libsys.h>
-#include <exceptions.h>
 #include <process.h>
 #include "../tests/test.h"
 
@@ -33,7 +32,6 @@ static uint64_t last_command_output = 0;
 /* Built-in command implementations */
 int clear(int argc, char **argv);
 int echo(int argc, char **argv);
-int exit_shell(int argc, char **argv);
 int font(int argc, char **argv);
 int help(int argc, char **argv);
 int man(int argc, char **argv);
@@ -59,23 +57,11 @@ Command commands[] = {
      .type = CMD_BUILTIN,
      .handler.builtin = clear},
 
-    {.name = "divzero",
-     .description = "Generates a division by zero exception",
-     .usage = "divzero",
-     .type = CMD_BUILTIN,
-     .handler.builtin = (int (*)(int, char **))_divzero},
-
     {.name = "echo",
      .description = "Prints the input string",
      .usage = "echo <text>",
      .type = CMD_BUILTIN,
      .handler.builtin = echo},
-
-    {.name = "exit",
-     .description = "Exits the shell with the provided exit code or 0",
-     .usage = "exit [code]",
-     .type = CMD_BUILTIN,
-     .handler.builtin = exit_shell},
 
     {.name = "font",
      .description = "Increases or decreases the font size",
@@ -88,12 +74,6 @@ Command commands[] = {
      .usage = "help",
      .type = CMD_BUILTIN,
      .handler.builtin = help},
-
-    {.name = "invop",
-     .description = "Generates an invalid Opcode exception",
-     .usage = "invop",
-     .type = CMD_BUILTIN,
-     .handler.builtin = (int (*)(int, char **))_invalidopcode},
 
     {.name = "man",
      .description = "Prints the description and usage of a command",
@@ -138,7 +118,7 @@ Command commands[] = {
      .handler.builtin = nice_cmd},
 
     {.name = "counter",
-     .description = "Test: Counts from 1 to N and exits",
+     .description = "Counts from 1 to N and exits",
      .usage = "counter [max_count]",
      .type = CMD_PROCESS,
      .handler.process = {.entrypoint = counter_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
@@ -150,7 +130,7 @@ Command commands[] = {
      .handler.process = {.entrypoint = loop_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 1}},
 
     {.name = "loop_ps",
-     .description = "Test: Runs ps in a loop to monitor shell state",
+     .description = "Runs ps in a loop to monitor shell state",
      .usage = "loop_ps",
      .type = CMD_PROCESS,
      .handler.process = {.entrypoint = loop_ps_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 1}},
@@ -413,18 +393,6 @@ int clear(int argc, char **argv)
     return 0;
 }
 
-int exit_shell(int argc, char **argv)
-{
-    int exit_code = 0;
-
-    if (argc > 1)
-    {
-        sscanf(argv[1], "%d", &exit_code);
-    }
-
-    return exit_code;
-}
-
 int font(int argc, char **argv)
 {
     if (argc < 2)
@@ -579,20 +547,20 @@ int mem(int argc, char **argv)
 
     printf("\e[1;34mTotal Memory:\e[0m   %d bytes (%d KB)\n", memStatus.total, memStatus.total / 1024);
 
-    printf("\e[1;34mUsed Memory:\e[0m    %d bytes (%d KB)\n",memStatus.used, memStatus.used / 1024);
-    printf("\e[1;34mFree Memory:\e[0m    %d bytes (%d KB)\n",memStatus.free, memStatus.free / 1024);
+    printf("\e[1;34mUsed Memory:\e[0m    %d bytes (%d KB)\n", memStatus.used, memStatus.used / 1024);
+    printf("\e[1;34mFree Memory:\e[0m    %d bytes (%d KB)\n", memStatus.free, memStatus.free / 1024);
 
     printf("\e[1;34mBase Address:\e[0m   %x\n", (uint64_t)memStatus.base);
-    //printf("\e[1;34mEnd Address:\e[0m    %x\n", (uint64_t)memStatus.end);
+    // printf("\e[1;34mEnd Address:\e[0m    %x\n", (uint64_t)memStatus.end);
 
     // Calculate usage percentage
     if (memStatus.total > 0)
     {
         uint32_t usagePercent = (memStatus.used * 100) / memStatus.total;
-        //printf("\e[1;34mUsage:\e[0m          %d%%\n", usagePercent);
+        // printf("\e[1;34mUsage:\e[0m          %d%%\n", usagePercent);
 
         // Visual bar
-        //printf("\e[1;34mUsage Bar:\e[0m     [");
+        // printf("\e[1;34mUsage Bar:\e[0m     [");
         printf("\e[1;34mUsage:\e[0m     [");
         int barWidth = 40;
         int filledWidth = (usagePercent * barWidth) / 100;
@@ -613,11 +581,48 @@ int mem(int argc, char **argv)
 
 int kill_cmd(int argc, char **argv)
 {
-    (void)argc; // Unused
-    (void)argv; // Unused
+    if (argc < 2)
+    {
+        fprintf(FD_STDERR, "Usage: kill <pid>\n");
+        return 1;
+    }
 
-    printf("kill: Kill process (not implemented yet)\n");
-    return 0;
+    long pid = satoi(argv[1]);
+
+    if (pid <= 0)
+    {
+        fprintf(FD_STDERR, "Error: Invalid PID '%s'\n", argv[1]);
+        return 1;
+    }
+
+    // Protect init process
+    if (pid == 1)
+    {
+        fprintf(FD_STDERR, "Error: Cannot kill init process (PID 1) - system critical\n");
+        return 1;
+    }
+
+    // Protect shell itself
+    if (pid == getpid())
+    {
+        fprintf(FD_STDERR, "Error: Cannot kill the shell itself\n");
+        // preguntar si deberia poder dejar al usuario hacer esto
+        return 1;
+    }
+
+    int32_t result = kill(pid);
+
+    if (result == 0)
+    {
+        printf("Process %d killed successfully\n", pid);
+        return 0;
+    }
+
+    else
+    {
+        fprintf(FD_STDERR, "Error: Could not kill process %d (code: %d)\n", pid, result);
+        return 1;
+    }
 }
 
 int block_cmd(int argc, char **argv)
