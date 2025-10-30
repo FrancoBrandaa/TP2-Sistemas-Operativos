@@ -48,6 +48,10 @@ int help(int argc, char **argv);
 int man(int argc, char **argv);
 int ps(int argc, char **argv);
 int regs(int argc, char **argv);
+int mem(int argc, char **argv);
+int kill_cmd(int argc, char **argv);
+int block_cmd(int argc, char **argv);
+int nice_cmd(int argc, char **argv);
 
 /* Process wrappers for test programs and utilities */
 int counter_wrapper(int argc, char **argv);

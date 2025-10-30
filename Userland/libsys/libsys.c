@@ -105,7 +105,7 @@ int32_t getCharacterWithoutDisplay(void)
 }
 
 /* Memory management wrappers */
-int32_t getMemoryStatus(void *memStatus)
+int32_t getMemoryStatus(void * memStatus)
 {
     return sys_get_mem_status(memStatus);
 }

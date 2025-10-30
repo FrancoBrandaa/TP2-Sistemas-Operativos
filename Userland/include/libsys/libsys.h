@@ -118,6 +118,16 @@ void sleep(uint32_t milliseconds);
 int32_t getRegisterSnapshot(int64_t *registers);
 int32_t getCharacterWithoutDisplay(void);
 
+// Memory management structures and wrappers
+typedef struct
+{
+    uint32_t total; // Total memory size
+    uint32_t used;  // Used memory
+    uint32_t free;  // Free memory
+    void *base;     // Base address of memory pool
+    void *end;      // End address of memory pool
+} MemoryStatus;
+
 // Memory management wrappers (provided by libsys)
 // These are thin wrappers that call kernel syscalls via libsys
 int32_t getMemoryStatus(void *memStatus);

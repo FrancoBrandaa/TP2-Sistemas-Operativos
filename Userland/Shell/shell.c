@@ -39,6 +39,10 @@ int help(int argc, char **argv);
 int man(int argc, char **argv);
 int ps(int argc, char **argv);
 int regs(int argc, char **argv);
+int mem(int argc, char **argv);
+int kill_cmd(int argc, char **argv);
+int block_cmd(int argc, char **argv);
+int nice_cmd(int argc, char **argv);
 
 /* ============================================================================
  * KEYBOARD CALLBACK DECLARATIONS
@@ -108,6 +112,30 @@ Command commands[] = {
      .usage = "regs",
      .type = CMD_BUILTIN,
      .handler.builtin = regs},
+
+    {.name = "mem",
+     .description = "Prints memory status and usage",
+     .usage = "mem",
+     .type = CMD_BUILTIN,
+     .handler.builtin = mem},
+
+    {.name = "kill",
+     .description = "Kills a process by PID",
+     .usage = "kill <pid>",
+     .type = CMD_BUILTIN,
+     .handler.builtin = kill_cmd},
+
+    {.name = "block",
+     .description = "Blocks a process by PID",
+     .usage = "block <pid>",
+     .type = CMD_BUILTIN,
+     .handler.builtin = block_cmd},
+
+    {.name = "nice",
+     .description = "Changes the priority of a process",
+     .usage = "nice <pid> <priority>",
+     .type = CMD_BUILTIN,
+     .handler.builtin = nice_cmd},
 
     {.name = "counter",
      .description = "Test: Counts from 1 to N and exits",
@@ -528,5 +556,84 @@ int regs(int argc, char **argv)
         printf("\e[0;34m%s\e[0m: %x\n", register_names[i], registers[i]);
     }
 
+    return 0;
+}
+
+int mem(int argc, char **argv)
+{
+    (void)argc; // Unused
+    (void)argv; // Unused
+
+    MemoryStatus memStatus;
+
+    int32_t result = getMemoryStatus(&memStatus);
+
+    if (result != 0)
+    {
+        fprintf(FD_STDERR, "Error: Could not retrieve memory status\n");
+        return 1;
+    }
+
+    // Print memory status
+    printf("\n\e[1;36m========== MEMORY STATUS ==========\e[0m\n\n");
+
+    printf("\e[1;34mTotal Memory:\e[0m   %d bytes (%d KB)\n", memStatus.total, memStatus.total / 1024);
+
+    printf("\e[1;34mUsed Memory:\e[0m    %d bytes (%d KB)\n",memStatus.used, memStatus.used / 1024);
+    printf("\e[1;34mFree Memory:\e[0m    %d bytes (%d KB)\n",memStatus.free, memStatus.free / 1024);
+
+    printf("\e[1;34mBase Address:\e[0m   %x\n", (uint64_t)memStatus.base);
+    //printf("\e[1;34mEnd Address:\e[0m    %x\n", (uint64_t)memStatus.end);
+
+    // Calculate usage percentage
+    if (memStatus.total > 0)
+    {
+        uint32_t usagePercent = (memStatus.used * 100) / memStatus.total;
+        //printf("\e[1;34mUsage:\e[0m          %d%%\n", usagePercent);
+
+        // Visual bar
+        //printf("\e[1;34mUsage Bar:\e[0m     [");
+        printf("\e[1;34mUsage:\e[0m     [");
+        int barWidth = 40;
+        int filledWidth = (usagePercent * barWidth) / 100;
+
+        for (int i = 0; i < barWidth; i++)
+        {
+            if (i < filledWidth)
+                printf("\e[1;32m=\e[0m"); // Green for used
+            else
+                printf("\e[0;37m-\e[0m"); // Gray for free
+        }
+        printf("] %d%%\n", usagePercent);
+    }
+
+    printf("\n");
+    return 0;
+}
+
+int kill_cmd(int argc, char **argv)
+{
+    (void)argc; // Unused
+    (void)argv; // Unused
+
+    printf("kill: Kill process (not implemented yet)\n");
+    return 0;
+}
+
+int block_cmd(int argc, char **argv)
+{
+    (void)argc; // Unused
+    (void)argv; // Unused
+
+    printf("block: Block process (not implemented yet)\n");
+    return 0;
+}
+
+int nice_cmd(int argc, char **argv)
+{
+    (void)argc; // Unused
+    (void)argv; // Unused
+
+    printf("nice: Change process priority (not implemented yet)\n");
     return 0;
 }
