@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
-#include <libsys.h>
+
 #include "test_util.h"
 
 #define TOTAL_PROCESSES 3
@@ -63,7 +63,6 @@ uint64_t test_prio(uint64_t argc, char *argv[])
 
     for (i = 0; i < TOTAL_PROCESSES; i++){
         my_unblock(pids[i]);
-        printf("  PROCESS %d UNBLOCKED\n", pids[i]);
     }
       
 

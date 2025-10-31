@@ -151,5 +151,6 @@ char getYield()
 int yield()
 {
     setYield();
+    forceSwitchContext();
     return 1;
 }

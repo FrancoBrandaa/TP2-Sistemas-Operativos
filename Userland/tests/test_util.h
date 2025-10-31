@@ -1,4 +1,8 @@
 #include <stdint.h>
+#include <libsys.h>
+
+typedef int (*entryPoint)(int argc, char *argv[]);
+
 
 uint32_t GetUint();
 uint32_t GetUniform(uint32_t max);
