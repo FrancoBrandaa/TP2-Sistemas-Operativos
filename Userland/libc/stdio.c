@@ -150,6 +150,37 @@ void vfprintf(int fd, const char *format, va_list args)
                 }
                 break;
             }
+            case 'u':
+            {
+                unsigned int value = va_arg(args, unsigned int);
+                int len = uintToBase(value, buffer, 10);
+
+                // Apply padding
+                if (width > len)
+                {
+                    int padding = width - len;
+                    char padChar = zeroPad ? '0' : ' ';
+
+                    if (!leftAlign)
+                    {
+                        for (int j = 0; j < padding; j++)
+                            sys_write(fd, &padChar, 1);
+                    }
+
+                    fprintf(fd, buffer);
+
+                    if (leftAlign)
+                    {
+                        for (int j = 0; j < padding; j++)
+                            sys_write(fd, " ", 1);
+                    }
+                }
+                else
+                {
+                    fprintf(fd, buffer);
+                }
+                break;
+            }
             case 'o':
                 printBase(fd, va_arg(args, int), 8);
                 break;
