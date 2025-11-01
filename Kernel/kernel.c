@@ -12,6 +12,7 @@
 #include <interrupts.h>
 #include <semaphoreManager.h>
 #include <fds.h>
+#include <keyboard.h>
 
 // extern uint8_t text;
 // extern uint8_t rodata;
@@ -72,6 +73,7 @@ int main()
 	createMemoryManager(memoryStart, memorySize);
 	initSemManager();
 	initFileDescriptors();
+	initKeyboard();
 	setFontSize(2);
 
 	initProcesses();

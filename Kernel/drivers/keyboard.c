@@ -3,6 +3,7 @@
 #include <interrupts.h>
 #include <cursor.h>
 #include <stddef.h>
+#include <semaphoreManager.h>
 
 #define BUFFER_SIZE 1024
 
@@ -35,6 +36,7 @@ static uint8_t SHIFT_KEY_PRESSED, CAPS_LOCK_KEY_PRESSED, CONTROL_KEY_PRESSED;
 static int8_t buffer[BUFFER_SIZE];
 static uint16_t to_write = 0, to_read = 0;
 uint8_t keyboard_options = 0;
+static int keyboard_semaphore = -1; // Semáforo para sincronización de teclado
 
 typedef struct {
     uint8_t registered_from_kernel;
@@ -147,6 +149,11 @@ void restoreKeyFnMapNonKernel(SpecialKeyHandler * map) {
     }
 }
 
+void initKeyboard() {
+    // Inicializar el semáforo del teclado con valor 0 (bloqueado inicialmente)
+    keyboard_semaphore = semCreate("keyboard_input", 0);
+}
+
 void clearKeyFnMapNonKernel(SpecialKeyHandler * map) {
     for(uint8_t i = ESCAPE_KEY; i < F12_KEY; i++){
         if (KeyFnMap[i].registered_from_kernel == 0) {
@@ -222,7 +229,15 @@ int8_t getKeyboardCharacter(enum KEYBOARD_OPTIONS ops) {
         to_write == to_read || // always get at least one char from the buffer if empty
         (   (keyboard_options & AWAIT_RETURN_KEY) && // wait for \n or EOF to be entered by the user
             !(buffer[SUB_MOD(to_write, 1, BUFFER_SIZE)] == NEW_LINE_CHAR || buffer[SUB_MOD(to_write, 1, BUFFER_SIZE)] == EOF)
-        )) _hlt();
+        )) {
+        // Usar semWait en lugar de _hlt() para eliminar espera activa
+        if (keyboard_semaphore != -1) {
+            semWait(keyboard_semaphore);
+        } else {
+            print("Error: keyboard_semaphore no está inicializado\n");
+            _hlt(); // Fallback si el semáforo no está inicializado
+        }
+    }
 
     keyboard_options = 0;
     int8_t aux = buffer[to_read];
@@ -276,6 +291,10 @@ uint8_t keyboardHandler(){
             }
 
             addCharToBuffer(c, keyboard_options & SHOW_BUFFER_WHILE_TYPING);
+        // Notificar al semáforo que hay un nuevo carácter disponible
+            if (keyboard_semaphore != -1) {
+                semPost(keyboard_semaphore);
+            }
         } else if (c == BACKSPACE_KEY && to_write != to_read) {
             DEC_MOD(to_write, BUFFER_SIZE);
             clearPreviousCharacter();
