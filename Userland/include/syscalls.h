@@ -98,4 +98,14 @@ int32_t sys_sem_value(int semId);
 /* 0x80000305 */
 void sys_sem_destroy(int semId);
 
+/* File descriptor syscalls */
+/* 0x80000400 */
+int32_t sys_pipe(int *fds);
+/* 0x80000401 */
+int32_t sys_close(int fd);
+/* 0x80000402 */
+int32_t sys_get_fd(int *fds);
+/* 0x80000403 */
+int32_t sys_read_at_current_pos(int fd, char *buf, int count);
+
 #endif

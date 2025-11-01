@@ -196,3 +196,27 @@ void semDestroy(int semId)
 {
     sys_sem_destroy(semId);
 }
+
+// ==================================================================
+// File descriptor management wrappers
+// ==================================================================
+
+int32_t pipe(int fds[2])
+{
+    return sys_pipe(fds);
+}
+
+int32_t close(int fd)
+{
+    return sys_close(fd);
+}
+
+int32_t getFD(int *fds)
+{
+    return sys_get_fd(fds);
+}
+
+int32_t readAtCurrentPos(int fd, char *buf, int count)
+{
+    return sys_read_at_current_pos(fd, buf, count);
+}

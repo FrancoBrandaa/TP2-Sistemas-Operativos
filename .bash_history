@@ -20,3 +20,12 @@ make
 make 
 make 
 exit
+cd root
+ls
+cd kernel
+gdb -x .gdbinit
+gdb -x .gdbinit
+cd root
+./debug.sh 
+./debug.sh 
+./debug.sh 

@@ -244,7 +244,7 @@ uint8_t keyboardHandler(){
         case SHIFT_KEY_R:
             SHIFT_KEY_PRESSED = is_pressed;
             break;
-        case CONTROL_KEY_L:
+        case CONTROL_KEY_L: // or the another control key if needed
             CONTROL_KEY_PRESSED = is_pressed;
             break;
         case CAPS_LOCK_KEY:

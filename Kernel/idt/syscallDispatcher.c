@@ -10,6 +10,7 @@
 #include <process.h>
 #include <scheduler.h>
 #include <semaphoreManager.h>
+#include <fds.h>
 
 extern int64_t register_snapshot[18];
 extern int64_t register_snapshot_taken;
@@ -130,6 +131,16 @@ int32_t syscallDispatcher(Registers *registers)
 		sys_sem_destroy(registers->rdi);
 		return 0;
 
+	// File descriptor syscalls
+	case 0x80000400:
+		return sys_pipe((int *)registers->rdi);
+	case 0x80000401:
+		return sys_close(registers->rdi);
+	case 0x80000402:
+		return sys_get_fd((int *)registers->rdi);
+	case 0x80000403:
+		return sys_read_at_current_pos(registers->rdi, (char *)registers->rsi, registers->rdx);
+
 	default:
 		return 0;
 	}
@@ -141,18 +152,28 @@ int32_t syscallDispatcher(Registers *registers)
 
 int32_t sys_write(int32_t fd, char *__user_buf, int32_t count)
 {
-	return printToFd(fd, __user_buf, count);
+	//usar el sistema de fds
+	return writeToFD(fd, __user_buf, count, getTextColor());
+	//return printToFd(fd, __user_buf, count);
 }
 
 int32_t sys_read(int32_t fd, signed char *__user_buf, int32_t count)
 {
-	int32_t i;
-	int8_t c;
-	for (i = 0; i < count && (c = getKeyboardCharacter(AWAIT_RETURN_KEY | SHOW_BUFFER_WHILE_TYPING)) != EOF; i++)
-	{
-		*(__user_buf + i) = c;
-	}
-	return i;
+	// Para otros FDs (pipes, etc.) usar el sistema de streams
+    // if (fd < 0 || fd >= MAX_FDS || !fileDescriptors[fd].isOpen || fileDescriptors[fd].mode == W) {
+    //     return -1; // FD inválido o no tiene permiso de lectura
+    // }
+	//usar el sistema de fds
+	return readFromFD(fd, (char *)__user_buf, count);
+
+	// lo viejo
+	// int32_t i;
+	// int8_t c;
+	// for (i = 0; i < count && (c = getKeyboardCharacter(AWAIT_RETURN_KEY | SHOW_BUFFER_WHILE_TYPING)) != EOF; i++)
+	// {
+	// 	*(__user_buf + i) = c;
+	// }
+	// return i;
 }
 
 // ==================================================================
@@ -481,4 +502,35 @@ void sys_sem_destroy(int semId)
 	}
 
 	semDestroy(semId);
+}
+
+// ==================================================================
+// File descriptor system calls
+// ==================================================================
+
+int32_t sys_pipe(int *fds)
+{
+	if (fds == NULL) {
+		return -1;
+	}
+	return createPipe(fds);
+}
+
+int32_t sys_close(int fd)
+{
+	return closeFD(fd);
+}
+
+int32_t sys_get_fd(int *fds)
+{
+	if (fds == NULL) {
+		return -1; // Error: fds is NULL
+	}
+
+	return getFileDescriptors(fds);
+}
+
+int32_t sys_read_at_current_pos(int fd, char *buf, int count)
+{
+	return readFromFDAt(fd, buf, count, getReadPos(fd));
 }

@@ -11,6 +11,7 @@
 #include <scheduler.h>
 #include <interrupts.h>
 #include <semaphoreManager.h>
+#include <fds.h>
 
 // extern uint8_t text;
 // extern uint8_t rodata;
@@ -70,6 +71,7 @@ int main()
 
 	createMemoryManager(memoryStart, memorySize);
 	initSemManager();
+	initFileDescriptors();
 	setFontSize(2);
 
 	initProcesses();

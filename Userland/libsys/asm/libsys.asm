@@ -50,6 +50,11 @@ GLOBAL sys_sem_post
 GLOBAL sys_sem_value
 GLOBAL sys_sem_destroy
 
+GLOBAL sys_pipe
+GLOBAL sys_close
+GLOBAL sys_get_fd
+GLOBAL sys_read_at_current_pos
+
 section .text
 
 %macro sys_int80 1
@@ -121,3 +126,9 @@ sys_sem_wait: sys_int80 0x80000302
 sys_sem_post: sys_int80 0x80000303
 sys_sem_value: sys_int80 0x80000304
 sys_sem_destroy: sys_int80 0x80000305
+
+; syscalls de file descriptors
+sys_pipe: sys_int80 0x80000400
+sys_close: sys_int80 0x80000401
+sys_get_fd: sys_int80 0x80000402
+sys_read_at_current_pos: sys_int80 0x80000403

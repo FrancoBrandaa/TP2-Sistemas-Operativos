@@ -155,4 +155,11 @@ void semPost(int semId);
 int32_t semValue(int semId);
 void semDestroy(int semId);
 
+// File descriptor management wrappers (provided by libsys)
+// These are thin wrappers that call kernel syscalls via libsys
+int32_t pipe(int fds[2]);
+int32_t close(int fd);
+int32_t getFD(int *fds);
+int32_t readAtCurrentPos(int fd, char *buf, int count);
+
 #endif /* _LIBSYS_H_ */
