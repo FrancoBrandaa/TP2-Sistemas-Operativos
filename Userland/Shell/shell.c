@@ -141,6 +141,24 @@ Command commands[] = {
      .usage = "loop_ps",
      .type = CMD_PROCESS,
      .handler.process = {.entrypoint = loop_ps_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 1}},
+
+    {.name = "filter",
+     .description = "Filters out vowels from text",
+     .usage = "filter <text>",
+     .type = CMD_PROCESS,
+     .handler.process = {.entrypoint = filter_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
+
+    {.name = "cat",
+     .description = "Prints text as received",
+     .usage = "cat <text>",
+     .type = CMD_PROCESS,
+     .handler.process = {.entrypoint = cat_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
+
+    {.name = "wc",
+     .description = "Counts the number of characters in text",
+     .usage = "wc <text>",
+     .type = CMD_PROCESS,
+     .handler.process = {.entrypoint = wc_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
 };
 
 Command *find_command(const char *name)
@@ -247,7 +265,7 @@ static void printNextCommand(enum REGISTERABLE_KEYS scancode)
 int main()
 {
     clear(0, NULL);
-    
+
     // // TEST_SYNC - Test de sincronización con semáforos
     // printf("\e[1;35m=== INICIANDO TEST_SYNC ===\e[0m\n");
     // printf("Este test verifica la sincronización con semáforos.\n");
@@ -265,7 +283,6 @@ int main()
     // char *sync_argv_with_sem[] = {"10", "1"}; // 100 iteraciones, con semáforo
     // test_sync(2, sync_argv_with_sem);
     // printf("\n\e[1;32m=== TEST_SYNC FINALIZADO ===\e[0m\n\n");
-
 
     // // TEST_PRIO - Test de prioridades
     // printf("\e[1;36m=== INICIANDO TEST_PRIO ===\e[0m\n");

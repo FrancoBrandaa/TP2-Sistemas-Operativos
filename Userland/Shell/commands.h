@@ -56,5 +56,8 @@ int nice_cmd(int argc, char **argv);
 int counter_wrapper(int argc, char **argv);
 int loop_wrapper(int argc, char **argv);
 int loop_ps_wrapper(int argc, char **argv);
+int filter_wrapper(int argc, char **argv);
+int cat_wrapper(int argc, char **argv);
+int wc_wrapper(int argc, char **argv);
 
 #endif // COMMANDS_H

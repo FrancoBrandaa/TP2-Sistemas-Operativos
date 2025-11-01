@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <libsys.h>
 #include <process.h>
+#include <syscalls.h>
 #include "commands.h"
 #include "../tests/test_util.h"
 
@@ -150,5 +151,110 @@ int loop_ps_wrapper(int argc, char **argv)
     }
 
     printf("\e[1;32m[Process %d] Monitoring complete.\e[0m\n", my_pid);
+    return 0;
+}
+
+/**
+ * filter_wrapper - Filtra las vocales del input
+ *
+ * Usage: filter <text>
+ *
+ * Elimina todas las vocales (tanto mayúsculas como minúsculas) del texto
+ * pasado como argumento.
+ */
+int filter_wrapper(int argc, char **argv)
+{
+    if (argc < 2)
+    {
+        printf("Usage: filter <text>\n");
+        return 1;
+    }
+
+    // Procesar todos los argumentos (palabras separadas por espacios)
+    for (int i = 1; i < argc; i++)
+    {
+        char *str = argv[i];
+        for (int j = 0; str[j] != '\0'; j++)
+        {
+            char c = str[j];
+            // Filtrar vocales (mayúsculas y minúsculas)
+            if (c != 'a' && c != 'e' && c != 'i' && c != 'o' && c != 'u' &&
+                c != 'A' && c != 'E' && c != 'I' && c != 'O' && c != 'U')
+            {
+                putchar(c);
+            }
+        }
+        if (i < argc - 1)
+        {
+            putchar(' '); // Espacio entre palabras
+        }
+    }
+    putchar('\n');
+
+    return 0;
+}
+
+/**
+ * cat_wrapper - Imprime el texto tal como lo recibe
+ *
+ * Usage: cat <text>
+ *
+ * Imprime el texto pasado como argumento sin modificación alguna.
+ */
+int cat_wrapper(int argc, char **argv)
+{
+    if (argc < 2)
+    {
+        printf("Usage: cat <text>\n");
+        return 1;
+    }
+
+    // Imprimir todos los argumentos con espacios
+    for (int i = 1; i < argc; i++)
+    {
+        printf("%s", argv[i]);
+        if (i < argc - 1)
+        {
+            putchar(' ');
+        }
+    }
+    putchar('\n');
+
+    return 0;
+}
+
+/**
+ * wc_wrapper - Cuenta la cantidad de caracteres del texto
+ *
+ * Usage: wc <text>
+ *
+ * Cuenta el número total de caracteres en el texto pasado como argumento
+ * (incluyendo los espacios entre palabras).
+ */
+int wc_wrapper(int argc, char **argv)
+{
+    if (argc < 2)
+    {
+        printf("Usage: wc <text>\n");
+        return 1;
+    }
+
+    int char_count = 0;
+
+    // Contar caracteres en todos los argumentos
+    for (int i = 1; i < argc; i++)
+    {
+        char *str = argv[i];
+        for (int j = 0; str[j] != '\0'; j++)
+        {
+            char_count++;
+        }
+        if (i < argc - 1)
+        {
+            char_count++; // Contar el espacio entre palabras
+        }
+    }
+
+    printf("%d\n", char_count);
     return 0;
 }
