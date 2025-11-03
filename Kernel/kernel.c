@@ -14,6 +14,9 @@
 #include <fds.h>
 #include <keyboard.h>
 
+#define SHELL_PRIORITY MAX_PRIORITY
+#define INIT_PRIORITY MIN_PRIORITY
+
 // extern uint8_t text;
 // extern uint8_t rodata;
 // extern uint8_t data;
@@ -86,7 +89,7 @@ int main()
 	params.name = "init";
 	params.argc = 0;
 	params.argv = NULL;
-	params.priority = 1;
+	params.priority = INIT_PRIORITY;
 	params.entryPoint = (entryPoint)&process_idle;
 	params.foreground = 0;
 	createProcess(&params);
@@ -96,7 +99,7 @@ int main()
 	params.foreground = 1;
 	params.argc = 0;
 	params.argv = NULL;
-	params.priority = 3;
+	params.priority = SHELL_PRIORITY;
 	createProcess(&params);
 
 	forceSwitchContext(); // para que arranque el primer proceso, no dependo del timer.

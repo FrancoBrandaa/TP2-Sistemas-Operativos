@@ -9,6 +9,8 @@
 #include "../tests/test.h"
 
 #define DEFAULT_PRIORITY 3
+#define INIT_PID 1
+
 /* ============================================================================
  * INTERNAL STATE
  * ============================================================================ */
@@ -36,7 +38,6 @@ int font(int argc, char **argv);
 int help(int argc, char **argv);
 int man(int argc, char **argv);
 int ps(int argc, char **argv);
-int regs(int argc, char **argv);
 int mem(int argc, char **argv);
 int kill_cmd(int argc, char **argv);
 int block_cmd(int argc, char **argv);
@@ -88,12 +89,6 @@ Command commands[] = {
      .type = CMD_BUILTIN,
      .handler.builtin = ps},
 
-    {.name = "regs",
-     .description = "Prints the register snapshot, if any",
-     .usage = "regs",
-     .type = CMD_BUILTIN,
-     .handler.builtin = regs},
-
     {.name = "mem",
      .description = "Prints memory status and usage",
      .usage = "mem",
@@ -143,20 +138,20 @@ Command commands[] = {
      .handler.process = {.entrypoint = loop_ps_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 1}},
 
     {.name = "filter",
-     .description = "Reads from stdin and filters out vowels (use Ctrl+D to end)",
-     .usage = "filter",
+     .description = "Reads from stdin and filters out vowels",
+     .usage = "filter  (type anything and use Ctrl+D to end)",
      .type = CMD_PROCESS,
      .handler.process = {.entrypoint = filter_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
 
     {.name = "cat",
-     .description = "Reads from stdin and echoes it back (use Ctrl+D to end)",
-     .usage = "cat",
+     .description = "Reads from stdin and echoes it back",
+     .usage = "cat (type anything and use Ctrl+D to end)",
      .type = CMD_PROCESS,
      .handler.process = {.entrypoint = cat_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
 
     {.name = "wc",
-     .description = "Reads from stdin and counts characters (use Ctrl+D to end)",
-     .usage = "wc",
+     .description = "Reads from stdin and counts characters",
+     .usage = "wc (type anything and use Ctrl+D to end)",
      .type = CMD_PROCESS,
      .handler.process = {.entrypoint = wc_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
 };
@@ -542,34 +537,6 @@ int ps(int argc, char **argv)
     return 0;
 }
 
-int regs(int argc, char **argv)
-{
-    (void)argc; // Unused
-    (void)argv; // Unused
-
-    const static char *register_names[] = {
-        "rax", "rbx", "rcx", "rdx", "rbp", "rdi", "rsi", "r8 ", "r9 ", "r10", "r11", "r12", "r13", "r14", "r15", "rsp", "rip", "rflags"};
-
-    int64_t registers[18];
-
-    uint8_t aux = getRegisterSnapshot(registers);
-
-    if (aux == 0)
-    {
-        perror("No register snapshot available\n");
-        return 1;
-    }
-
-    printf("Latest register snapshot:\n");
-
-    for (int i = 0; i < 18; i++)
-    {
-        printf("\e[0;34m%s\e[0m: %x\n", register_names[i], registers[i]);
-    }
-
-    return 0;
-}
-
 int mem(int argc, char **argv)
 {
     (void)argc; // Unused
@@ -639,7 +606,7 @@ int kill_cmd(int argc, char **argv)
     }
 
     // Protect init process
-    if (pid == 1)
+    if (pid == INIT_PID)
     {
         fprintf(FD_STDERR, "Error: Cannot kill init process (PID 1) - system critical\n");
         return 1;
@@ -649,7 +616,6 @@ int kill_cmd(int argc, char **argv)
     if (pid == getpid())
     {
         fprintf(FD_STDERR, "Error: Cannot kill the shell itself\n");
-        // preguntar si deberia poder dejar al usuario hacer esto
         return 1;
     }
 
@@ -684,6 +650,21 @@ int block_cmd(int argc, char **argv)
         printf("Error: Invalid PID\n");
         return -1;
     }
+
+    // Protect init process
+    if (pid == INIT_PID)
+    {
+        fprintf(FD_STDERR, "Error: Cannot block init process (PID 1) - system critical\n");
+        return 1;
+    }
+
+    // Protect shell from blocking itself
+    if (pid == getpid())
+    {
+        fprintf(FD_STDERR, "Error: Cannot block the shell itself\n");
+        return 1;
+    }
+
 
     // Get current process list to check state
     Process *processes = getProcessList();
