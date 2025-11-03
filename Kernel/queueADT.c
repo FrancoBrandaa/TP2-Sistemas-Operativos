@@ -1,4 +1,5 @@
 #include "../include/queueADT.h"
+#include <stddef.h>
 
 typedef struct node
 {
@@ -74,6 +75,9 @@ uint32_t isEmpty(queueADT q)
 
 void freeQueue(queueADT q)
 {
+    if (q == NULL)
+        return;
+
     while (!isEmpty(q))
     {
         dequeue(q);

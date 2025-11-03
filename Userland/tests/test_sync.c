@@ -8,13 +8,15 @@
 
 int64_t global; // shared memory
 
-void slowInc(int64_t *p, int64_t inc) {
+void slowInc(int64_t *p, int64_t inc)
+{
   uint64_t aux = *p;
-  yield(); // This makes the race condition highly probable , pues en ese intante cede cpu a otros procesos si nhaber incrementado, pero como 
-  aux += inc; //tiene capturado el sem no pasa nada
+  yield();    // This makes the race condition highly probable , pues en ese intante cede cpu a otros procesos si nhaber incrementado, pero como
+  aux += inc; // tiene capturado el sem no pasa nada
   *p = aux;
 }
-uint64_t my_process_inc(uint64_t argc, char *argv[]) {
+uint64_t my_process_inc(uint64_t argc, char *argv[])
+{
   uint64_t n;
   int8_t inc;
   int8_t use_sem;
@@ -23,41 +25,47 @@ uint64_t my_process_inc(uint64_t argc, char *argv[]) {
   if (argc != 3)
     return -1;
 
-  if ((n = satoi(argv[0])) <= 0){
+  if ((n = satoi(argv[0])) <= 0)
+  {
     printf("me meti en error 1");
     return -1;
   }
-    
-  if ((inc = satoi(argv[1])) == 0){
+
+  if ((inc = satoi(argv[1])) == 0)
+  {
     printf("me meti en error 2");
     return -1;
   }
-    
-  if ((use_sem = satoi(argv[2])) < 0){
+
+  if ((use_sem = satoi(argv[2])) < 0)
+  {
     printf("me meti en error 3");
     return -1;
   }
-    
 
   if (use_sem)
-    if ((sem_index = semOpen(SEM_ID, 1)) < 0) { 
+    if ((sem_index = semOpen(SEM_ID, 1)) < 0)
+    {
       printf("test_sync: ERROR opening semaphore\n");
       return -1;
     }
 
   uint64_t i;
-  for (i = 0; i < n; i++) {
-    if (use_sem){
+  for (i = 0; i < n; i++)
+  {
+    if (use_sem)
+    {
       semWait(sem_index);
     }
     slowInc(&global, inc);
-    if (use_sem){
+    if (use_sem)
+    {
       semPost(sem_index);
     }
-      
   }
 
-  if (use_sem){
+  if (use_sem)
+  {
     semClose(sem_index);
   }
 
@@ -65,8 +73,13 @@ uint64_t my_process_inc(uint64_t argc, char *argv[]) {
   return 0;
 }
 
+int my_process_inc_wrapper(int argc, char *argv[])
+{
+  return (int)my_process_inc(argc, argv);
+}
 
-uint64_t test_sync(uint64_t argc, char *argv[]) { //{n, use_sem, 0}
+uint64_t test_sync(uint64_t argc, char *argv[])
+{ //{n, use_sem, 0}
   uint64_t pids[2 * TOTAL_PAIR_PROCESSES];
 
   if (argc != 2)
@@ -78,16 +91,18 @@ uint64_t test_sync(uint64_t argc, char *argv[]) { //{n, use_sem, 0}
   global = 0;
 
   uint64_t i;
-  for (i = 0; i < TOTAL_PAIR_PROCESSES; i++) {
+  for (i = 0; i < TOTAL_PAIR_PROCESSES; i++)
+  {
     // Crear procesos decrementadores
-    pids[i] = createProcess("my_process_inc", (uint64_t (*)(uint64_t, char **))my_process_inc, 3, argvDec, 5, 0);
+    pids[i] = createProcess("my_process_inc", my_process_inc_wrapper, 3, argvDec, 5, 0);
     printf("Created decrementing process with PID %d\n", pids[i]);
     // Crear procesos incrementadores
-    pids[i + TOTAL_PAIR_PROCESSES] = createProcess("my_process_inc", (uint64_t (*)(uint64_t, char **))my_process_inc, 3, argvInc, 5, 0);
+    pids[i + TOTAL_PAIR_PROCESSES] = createProcess("my_process_inc", my_process_inc_wrapper, 3, argvInc, 5, 0);
     printf("Created incrementing process with PID %d\n", pids[i + TOTAL_PAIR_PROCESSES]);
-  } //crea cuatro procesos, dos que incrementan y dos que decrementan
+  } // crea cuatro procesos, dos que incrementan y dos que decrementan
 
-  for (i = 0; i < TOTAL_PAIR_PROCESSES; i++) {
+  for (i = 0; i < TOTAL_PAIR_PROCESSES; i++)
+  {
     wait(pids[i], NULL);
     wait(pids[i + TOTAL_PAIR_PROCESSES], NULL);
   }

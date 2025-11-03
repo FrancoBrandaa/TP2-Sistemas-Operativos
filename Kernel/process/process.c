@@ -161,7 +161,6 @@ PID createProcess(creationParameters *params)
         memcpy(args[i], params->argv[i], len + 1);
     }
 
-    Process *currentProcess;
     int allocatedProcess = getFreeProcess();
     if (allocatedProcess == -1)
     {
@@ -400,7 +399,6 @@ int changeProccessPriority(PID pid, Priority priority)
         return 0;
     }
 
-    Priority oldPriority = pcb->priority;
     pcb->priority = priority;
 
     // If the process is currently running, yield to reschedule it with new priority

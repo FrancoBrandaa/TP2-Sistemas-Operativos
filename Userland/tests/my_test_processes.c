@@ -2,6 +2,17 @@
 #include <libsys.h>
 #include "test_util.h"
 
+int endless_loop_print_wrapper(int argc, char *argv[])
+{
+  uint64_t wait = 100000000; // default value
+  if (argc > 0)
+  {
+    wait = satoi(argv[0]);
+  }
+  endless_loop_print(wait);
+  return 0;
+}
+
 enum TestProcessState
 {
   TEST_RUNNING,
@@ -42,7 +53,7 @@ int64_t my_test_processes(uint64_t argc, char *argv[])
     // Create max_processes processes
     for (rq = 0; rq < max_processes; rq++)
     {
-      p_rqs[rq].pid = createProcess("endless_loop", endless_loop_print, 1, argvAux, 1, 0);
+      p_rqs[rq].pid = createProcess("endless_loop", endless_loop_print_wrapper, 1, argvAux, 1, 0);
       if (p_rqs[rq].pid == -1)
       {
         printf("\e[0;31mERROR creating process\e[0m\n");

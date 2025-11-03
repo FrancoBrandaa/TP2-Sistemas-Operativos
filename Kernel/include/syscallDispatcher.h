@@ -93,6 +93,12 @@ void sys_sem_post(int semId);
 int32_t sys_sem_value(int semId);
 void sys_sem_destroy(int semId);
 
+// File descriptor syscall prototypes
+int32_t sys_pipe(int *fds);
+int32_t sys_close(int fd);
+int32_t sys_get_fd(int *fds);
+int32_t sys_read_at_current_pos(int fd, char *buf, int count);
+
 PID sys_getProcesspid();
 
 #endif

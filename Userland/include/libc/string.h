@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 int strlen(const char * str);
-int strcmp(char * str1, char * str2);
+int strcmp(const char * str1, const char * str2);
 int strcasecmp(char * str1, char * str2);
 void strcpy(char * dest, char * src);
 void strncpy(char * dest, char * src, int n);

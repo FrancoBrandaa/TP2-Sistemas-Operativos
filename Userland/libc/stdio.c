@@ -10,9 +10,6 @@ static char buffer[64] = {0};
 
 static uint32_t uintToBase(uint64_t value, char *buffer, uint32_t base);
 static void printBase(int fd, int num, int base);
-static void printBaseUnsigned(int fd, unsigned int num, int base);
-static void printBaseLong(int fd, long num, int base);
-static void printBaseUnsignedLong(int fd, unsigned long num, int base);
 // static void printFloat(int fd, float num);
 
 void puts(const char *str)
