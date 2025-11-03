@@ -4,6 +4,8 @@
 #include <cursor.h>
 #include <stddef.h>
 #include <semaphoreManager.h>
+#include <process.h>
+#include <video.h>
 
 #define BUFFER_SIZE 1024
 
@@ -245,6 +247,46 @@ int8_t getKeyboardCharacter(enum KEYBOARD_OPTIONS ops) {
     return aux;
 }
 
+void handleCtrlC() {
+    Process *fg = getTerminalForegroundProcess();
+    
+    if (fg != NULL) {
+        // Mostrar ^C en pantalla
+        print("^C\n");
+        
+        // Terminar el proceso en foreground
+        kill(fg->pid);
+        
+        // Limpiar el buffer de teclado para evitar caracteres residuales
+        while(clearBuffer() != 0);
+    }
+}
+
+void handleCtrlD() {
+    // Ctrl+D envía EOF (End of File)
+    // Comportamiento:
+    // 1. Si el buffer está vacío: agrega EOF al buffer
+    // 2. Si el buffer tiene contenido: agrega \n para enviarlo (flush)
+    
+    if (to_write == to_read) {
+        // Buffer vacío: agregar EOF
+        addCharToBuffer(EOF, 0); // No mostrar EOF en pantalla
+        
+        // Notificar al semáforo que hay un carácter disponible
+        if (keyboard_semaphore != -1) {
+            semPost(keyboard_semaphore);
+        }
+    } else {
+        // Buffer no vacío: agregar \n para enviar el contenido actual
+        addCharToBuffer(NEW_LINE_CHAR, 1); // Mostrar el \n
+        
+        // Notificar al semáforo
+        if (keyboard_semaphore != -1) {
+            semPost(keyboard_semaphore);
+        }
+    }
+}
+
 uint8_t keyboardHandler(){
     uint8_t scancode = getKeyboardBuffer();
     uint8_t is_pressed = isPressed(scancode);
@@ -268,6 +310,18 @@ uint8_t keyboardHandler(){
             break;
 
         return scancode;
+    }
+    
+    // Detectar Ctrl+C antes de procesar caracteres normales
+    if (CONTROL_KEY_PRESSED && is_pressed && makeCode(scancode) == C_KEY) {
+        handleCtrlC();
+        return scancode; // No procesar la 'C' como carácter normal
+    }
+    
+    // Detectar Ctrl+D (EOF)
+    if (CONTROL_KEY_PRESSED && is_pressed && makeCode(scancode) == D_KEY) {
+        handleCtrlD();
+        return scancode; // No procesar la 'D' como carácter normal
     }
     
     if (! (is_pressed && IS_KEYCODE(scancode)) ) return scancode; // ignore break or unsupported scancodes

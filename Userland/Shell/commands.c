@@ -155,106 +155,95 @@ int loop_ps_wrapper(int argc, char **argv)
 }
 
 /**
- * filter_wrapper - Filtra las vocales del input
+ * filter_wrapper - Lee una línea de stdin y filtra vocales
  *
- * Usage: filter <text>
+ * Usage: filter
  *
- * Elimina todas las vocales (tanto mayúsculas como minúsculas) del texto
- * pasado como argumento.
+ * Lee caracteres desde stdin hasta encontrar un newline o EOF.
+ * Filtra todas las vocales (mayúsculas y minúsculas).
+ * Imprime solo las consonantes, números y símbolos.
  */
 int filter_wrapper(int argc, char **argv)
 {
-    if (argc < 2)
+    (void)argc;
+    (void)argv;
+
+    int c; // Debe ser int, no char, para poder comparar con EOF (-1)
+
+    // Leer caracteres hasta encontrar newline o EOF
+    while ((c = getchar()) != EOF && c != '\n')
     {
-        printf("Usage: filter <text>\n");
-        return 1;
+        // Filtrar vocales (mayúsculas y minúsculas)
+        if (c != 'a' && c != 'e' && c != 'i' && c != 'o' && c != 'u' &&
+            c != 'A' && c != 'E' && c != 'I' && c != 'O' && c != 'U')
+        {
+            putchar(c);
+        }
     }
 
-    // Procesar todos los argumentos (palabras separadas por espacios)
-    for (int i = 1; i < argc; i++)
+    // Imprimir newline al final si no fue EOF
+    if (c == '\n')
     {
-        char *str = argv[i];
-        for (int j = 0; str[j] != '\0'; j++)
-        {
-            char c = str[j];
-            // Filtrar vocales (mayúsculas y minúsculas)
-            if (c != 'a' && c != 'e' && c != 'i' && c != 'o' && c != 'u' &&
-                c != 'A' && c != 'E' && c != 'I' && c != 'O' && c != 'U')
-            {
-                putchar(c);
-            }
-        }
-        if (i < argc - 1)
-        {
-            putchar(' '); // Espacio entre palabras
-        }
+        putchar('\n');
     }
-    putchar('\n');
 
     return 0;
 }
 
 /**
- * cat_wrapper - Imprime el texto tal como lo recibe
+ * cat_wrapper - Lee una línea de stdin y la imprime
  *
- * Usage: cat <text>
+ * Usage: cat
  *
- * Imprime el texto pasado como argumento sin modificación alguna.
+ * Lee caracteres desde stdin hasta encontrar un newline o EOF.
+ * Imprime los caracteres tal como los recibe.
  */
 int cat_wrapper(int argc, char **argv)
 {
-    if (argc < 2)
+    (void)argc;
+    (void)argv;
+
+    int c; // Debe ser int, no char, para poder comparar con EOF (-1)
+
+    // Leer caracteres hasta encontrar newline o EOF
+    while ((c = getchar()) != EOF && c != '\n')
     {
-        printf("Usage: cat <text>\n");
-        return 1;
+        putchar(c);
     }
 
-    // Imprimir todos los argumentos con espacios
-    for (int i = 1; i < argc; i++)
+    // Imprimir newline al final si no fue EOF
+    if (c == '\n')
     {
-        printf("%s", argv[i]);
-        if (i < argc - 1)
-        {
-            putchar(' ');
-        }
+        putchar('\n');
     }
-    putchar('\n');
 
     return 0;
 }
 
 /**
- * wc_wrapper - Cuenta la cantidad de caracteres del texto
+ * wc_wrapper - Cuenta caracteres de una línea de entrada
  *
- * Usage: wc <text>
+ * Usage: wc
  *
- * Cuenta el número total de caracteres en el texto pasado como argumento
- * (incluyendo los espacios entre palabras).
+ * Lee caracteres desde stdin hasta encontrar un newline o EOF.
+ * Muestra el total de caracteres leídos (sin contar el newline).
  */
 int wc_wrapper(int argc, char **argv)
 {
-    if (argc < 2)
-    {
-        printf("Usage: wc <text>\n");
-        return 1;
-    }
+    (void)argc;
+    (void)argv;
 
     int char_count = 0;
+    int c; // Debe ser int, no char, para poder comparar con EOF (-1)
 
-    // Contar caracteres en todos los argumentos
-    for (int i = 1; i < argc; i++)
+    // Leer caracteres hasta encontrar newline o EOF
+    while ((c = getchar()) != EOF && c != '\n')
     {
-        char *str = argv[i];
-        for (int j = 0; str[j] != '\0'; j++)
-        {
-            char_count++;
-        }
-        if (i < argc - 1)
-        {
-            char_count++; // Contar el espacio entre palabras
-        }
+        char_count++;
     }
 
+    // Mostrar el total de caracteres (sin contar el \n)
     printf("%d\n", char_count);
+
     return 0;
 }
