@@ -404,8 +404,21 @@ void perror(const char *s1)
 int getchar(void)
 {
     signed char c[1];
-    sys_read(FD_STDIN, c, 1);
-    return c[0];
+    int bytes_read = sys_read(FD_STDIN, c, 1);
+
+    // Si no se leyó nada, retornar EOF
+    if (bytes_read <= 0)
+    {
+        return EOF;
+    }
+
+    // Si el carácter leído es EOF (-1), retornarlo explícitamente
+    if (c[0] == (signed char)EOF)
+    {
+        return EOF;
+    }
+
+    return (unsigned char)c[0];
 }
 
 void putchar(const char c)

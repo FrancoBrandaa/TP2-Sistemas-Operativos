@@ -143,20 +143,20 @@ Command commands[] = {
      .handler.process = {.entrypoint = loop_ps_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 1}},
 
     {.name = "filter",
-     .description = "Filters out vowels from text",
-     .usage = "filter <text>",
+     .description = "Reads from stdin and filters out vowels (use Ctrl+D to end)",
+     .usage = "filter",
      .type = CMD_PROCESS,
      .handler.process = {.entrypoint = filter_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
 
     {.name = "cat",
-     .description = "Prints text as received",
-     .usage = "cat <text>",
+     .description = "Reads from stdin and echoes it back (use Ctrl+D to end)",
+     .usage = "cat",
      .type = CMD_PROCESS,
      .handler.process = {.entrypoint = cat_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
 
     {.name = "wc",
-     .description = "Counts the number of characters in text",
-     .usage = "wc <text>",
+     .description = "Reads from stdin and counts characters (use Ctrl+D to end)",
+     .usage = "wc",
      .type = CMD_PROCESS,
      .handler.process = {.entrypoint = wc_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
 };
