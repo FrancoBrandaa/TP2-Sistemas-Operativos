@@ -155,23 +155,24 @@ int loop_ps_wrapper(int argc, char **argv)
 }
 
 /**
- * filter_wrapper - Lee una línea de stdin y filtra vocales
+ * filter_wrapper - Filtra vocales de stdin (estilo Linux)
  *
  * Usage: filter
  *
- * Lee caracteres desde stdin hasta encontrar un newline o EOF.
+ * Lee toda la entrada desde stdin hasta EOF.
  * Filtra todas las vocales (mayúsculas y minúsculas).
  * Imprime solo las consonantes, números y símbolos.
+ * Para finalizar la entrada, presionar Ctrl+D.
  */
 int filter_wrapper(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
 
-    int c; // Debe ser int, no char, para poder comparar con EOF (-1)
+    int c;
 
-    // Leer caracteres hasta encontrar newline o EOF
-    while ((c = getchar()) != EOF && c != '\n')
+    // Leer todo stdin hasta EOF
+    while ((c = getchar()) != EOF)
     {
         // Filtrar vocales (mayúsculas y minúsculas)
         if (c != 'a' && c != 'e' && c != 'i' && c != 'o' && c != 'u' &&
@@ -181,69 +182,146 @@ int filter_wrapper(int argc, char **argv)
         }
     }
 
-    // Imprimir newline al final si no fue EOF
-    if (c == '\n')
-    {
-        putchar('\n');
-    }
-
     return 0;
 }
 
 /**
- * cat_wrapper - Lee una línea de stdin y la imprime
+ * cat_wrapper - Concatena y muestra stdin (estilo Linux)
  *
  * Usage: cat
  *
- * Lee caracteres desde stdin hasta encontrar un newline o EOF.
+ * Lee toda la entrada desde stdin hasta EOF.
  * Imprime los caracteres tal como los recibe.
+ * Para finalizar la entrada, presionar Ctrl+D.
  */
 int cat_wrapper(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
 
-    int c; // Debe ser int, no char, para poder comparar con EOF (-1)
+    int c;
 
-    // Leer caracteres hasta encontrar newline o EOF
-    while ((c = getchar()) != EOF && c != '\n')
+    // Leer todo stdin hasta EOF
+    while ((c = getchar()) != EOF)
     {
         putchar(c);
-    }
-
-    // Imprimir newline al final si no fue EOF
-    if (c == '\n')
-    {
-        putchar('\n');
     }
 
     return 0;
 }
 
 /**
- * wc_wrapper - Cuenta caracteres de una línea de entrada
+ * wc_wrapper - Cuenta líneas, palabras y caracteres (estilo Linux)
  *
- * Usage: wc
+ * Usage: wc [-l] [-w] [-c]
+ *   -l: Solo contar líneas
+ *   -w: Solo contar palabras
+ *   -c: Solo contar caracteres
+ *   (sin opciones: muestra líneas, palabras y caracteres)
  *
- * Lee caracteres desde stdin hasta encontrar un newline o EOF.
- * Muestra el total de caracteres leídos (sin contar el newline).
+ * Lee toda la entrada desde stdin hasta EOF.
+ * Para finalizar la entrada, presionar Ctrl+D.
  */
 int wc_wrapper(int argc, char **argv)
 {
-    (void)argc;
-    (void)argv;
-
+    int line_count = 0;
+    int word_count = 0;
     int char_count = 0;
-    int c; // Debe ser int, no char, para poder comparar con EOF (-1)
+    int in_word = 0;
+    int c;
 
-    // Leer caracteres hasta encontrar newline o EOF
-    while ((c = getchar()) != EOF && c != '\n')
+    // Flags para las opciones
+    int show_lines = 0;
+    int show_words = 0;
+    int show_chars = 0;
+    int show_all = 1; // Por defecto muestra todo
+
+    // Parsear argumentos
+    for (int i = 1; i < argc; i++)
     {
-        char_count++;
+        if (argv[i][0] == '-')
+        {
+            show_all = 0; // Si hay opciones, no mostrar todo por defecto
+            for (int j = 1; argv[i][j] != '\0'; j++)
+            {
+                switch (argv[i][j])
+                {
+                case 'l':
+                    show_lines = 1;
+                    break;
+                case 'w':
+                    show_words = 1;
+                    break;
+                case 'c':
+                    show_chars = 1;
+                    break;
+                default:
+                    printf("wc: invalid option -- '%c'\n", argv[i][j]);
+                    printf("Usage: wc [-l] [-w] [-c]\n");
+                    return 1;
+                }
+            }
+        }
     }
 
-    // Mostrar el total de caracteres (sin contar el \n)
-    printf("%d\n", char_count);
+    // Si se especificó show_all, habilitar todas las opciones
+    if (show_all)
+    {
+        show_lines = 1;
+        show_words = 1;
+        show_chars = 1;
+    }
+
+    // Leer todo stdin hasta EOF
+    while ((c = getchar()) != EOF)
+    {
+        char_count++;
+
+        // Contar líneas
+        if (c == '\n')
+        {
+            line_count++;
+            if (in_word)
+            {
+                word_count++;
+                in_word = 0;
+            }
+        }
+        // Contar palabras (separadas por espacios, tabs, newlines)
+        else if (c == ' ' || c == '\t' || c == '\r')
+        {
+            if (in_word)
+            {
+                word_count++;
+                in_word = 0;
+            }
+        }
+        else
+        {
+            in_word = 1;
+        }
+    }
+
+    // Si terminó en medio de una palabra, contarla
+    if (in_word)
+    {
+        word_count++;
+    }
+
+    // Mostrar resultados según las opciones
+    if (show_lines)
+    {
+        printf("%d lineas\n", line_count);
+    }
+    if (show_words)
+    {
+        printf("%d palabras\n", word_count);
+    }
+    if (show_chars)
+    {
+        printf("%d caracteres\n", char_count);
+    }
+
 
     return 0;
 }
