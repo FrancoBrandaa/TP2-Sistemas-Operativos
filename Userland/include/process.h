@@ -33,6 +33,7 @@ typedef struct
     uint64_t *stackBase, *stackEnd;
     int waitReturnValue;
     PID waitPid;
+    int fds[2]; // uno de lectura otro de escritura
 } Process;
 
 // Free the memory returned by ps()

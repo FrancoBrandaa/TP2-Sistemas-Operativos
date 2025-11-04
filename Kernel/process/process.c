@@ -50,6 +50,8 @@ PID initProcesses(void)
         processes[i].argv = NULL;
         processes[i].argc = 0;
         processes[i].waitPid = NONPID;
+        processes[i].fds[0] = 0; // Initialize stdin
+        processes[i].fds[1] = 1; // Initialize stdout
     }
     return 0;
 }
@@ -279,9 +281,31 @@ Process *getProcessesInformation()
 {
     int count = getProcessesCount(), ansIndex = 0;
     Process *ans = allocMemory((count + 1) * sizeof(Process));
-    ans[count].pid = NONPID; 
+    if (ans == NULL)
+    {
+        return NULL;
+    }
 
-    for (int i = 0; i < MAX_PROCESSES && ansIndex != count; i++)
+    // Initialize all memory to zero to avoid garbage data
+    for (int i = 0; i <= count; i++)
+    {
+        ans[i].pid = NONPID;
+        ans[i].state = EXITED;
+        ans[i].name[0] = '\0';
+        ans[i].argc = 0;
+        ans[i].argv = NULL;
+        ans[i].priority = 0;
+        ans[i].foreground = 0;
+        ans[i].entryPoint = NULL;
+        ans[i].stackBase = NULL;
+        ans[i].stackEnd = NULL;
+        ans[i].waitReturnValue = 0;
+        ans[i].waitPid = NONPID;
+        ans[i].fds[0] = 0;
+        ans[i].fds[1] = 1;
+    }
+
+    for (int i = 0; i < MAX_PROCESSES && ansIndex < count; i++)
     {
         if (processes[i].state != EXITED)
         {
@@ -306,7 +330,7 @@ void waitProcess(PID pidToWait, int *wstatus)
     PID mypid = getpid();
     Process *processToWait = &processes[pidToWait - 1];
 
-    //Si el proceso ya hizo exit, solo retorno
+    // Si el proceso ya hizo exit, solo retorno
     if (processToWait->state == EXITED)
     {
         if (wstatus != NULL)
@@ -428,7 +452,8 @@ Process *getTerminalForegroundProcess()
     return NULL;
 }
 
-int getFileDescriptors(int *fds){
+int getFileDescriptors(int *fds)
+{
 
     Process *currentProcess = getCurrentProcess();
     if (currentProcess == NULL)
