@@ -173,8 +173,6 @@ PID createProcess(creationParameters *params)
     }
 
     memcpy(processes[allocatedProcess].name, params->name, strlen(params->name) + 1);
-    // processes[allocatedProcess].parentpid = (currentProcess = getCurrentProcess()) == NULL ? 0 : currentProcess->pid;
-    // processes[allocatedProcess].waitingPID = NONPID;
 
     processes[allocatedProcess].argc = params->argc;
     processes[allocatedProcess].argv = args;
@@ -189,7 +187,7 @@ PID createProcess(creationParameters *params)
     processes[allocatedProcess].stackEnd = setupStack(params->argc, args, params->entryPoint, processes[allocatedProcess].stackBase, (entryPoint)processLoader);
     // rdi = argc , rsi = argv , rdx = entryPoint,
 
-    // memcpy(processes[allocatedProcess].fds, params->fds, sizeof(int) * 2);
+    memcpy(processes[allocatedProcess].fds, params->fds, sizeof(int) * 2);
     schedule(&(processes[allocatedProcess])); // agrego a la cola el proceso creado
     return processes[allocatedProcess].pid;
 }
@@ -430,17 +428,17 @@ Process *getTerminalForegroundProcess()
     return NULL;
 }
 
-// int getFileDescriptors(int *fds){
+int getFileDescriptors(int *fds){
 
-//     Process *currentProcess = getCurrentProcess();
-//     if (currentProcess == NULL)
-//     {
-//         return -1;
-//     }
-//     fds[0] = currentProcess->fds[0];
-//     fds[1] = currentProcess->fds[1];
-//     return 0;
-// }
+    Process *currentProcess = getCurrentProcess();
+    if (currentProcess == NULL)
+    {
+        return -1;
+    }
+    fds[0] = currentProcess->fds[0];
+    fds[1] = currentProcess->fds[1];
+    return 0;
+}
 
 // /*
 //  * getTerminalForegroundProcess

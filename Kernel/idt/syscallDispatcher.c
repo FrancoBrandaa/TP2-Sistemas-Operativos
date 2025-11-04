@@ -90,13 +90,14 @@ int32_t syscallDispatcher(Registers *registers)
 	case 0x80000102:
 		return sys_free((void *)registers->rdi);
 
-	case 0x80000200:
+	case 0x80000200: //chequiar 
 		return sys_create_process((const char *)registers->rdi,
 								  (int (*)(int, char **))registers->rsi,
 								  registers->rdx,
 								  (char **)registers->rcx,
 								  registers->r8,
-								  registers->r9);
+								  registers->r9,
+								  (int *)registers->r10);
 
 	case 0x80000201:
 		return sys_getpid();
@@ -379,7 +380,7 @@ int32_t sys_free(void *ptr)
 // Process management system calls
 // ==================================================================
 
-long sys_create_process(const char *name, int (*entry)(int, char **), int argc, char **argv, int priority, int foreground)
+long sys_create_process(const char *name, int (*entry)(int, char **), int argc, char **argv, int priority, int foreground, int fds[2])
 {
 	creationParameters params;
 	params.name = (char *)name;
@@ -388,6 +389,8 @@ long sys_create_process(const char *name, int (*entry)(int, char **), int argc, 
 	params.argv = argv;
 	params.priority = priority;
 	params.foreground = foreground;
+	params.fds[0] = fds[0];
+	params.fds[1] = fds[1];
 
 	return createProcess(&params);
 }

@@ -95,7 +95,8 @@ long my_create_process(char *name, uint32_t priority, char **argv)
   extern int zero_to_max_wrapper(int argc, char **argv);
   // Use default priority (1) if priority is 0, otherwise use the provided priority
   int actual_priority = (priority == 0) ? 1 : priority;
-  return createProcess(name, zero_to_max_wrapper, 0, argv, actual_priority, 1);
+  int fds[2] = {0, 1}; // STDIN, STDOUT
+  return createProcess(name, zero_to_max_wrapper, 0, argv, actual_priority, 1, fds);
 }
 
 int32_t my_nice(long pid, int32_t priority)

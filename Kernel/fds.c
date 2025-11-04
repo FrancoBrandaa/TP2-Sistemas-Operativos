@@ -292,13 +292,3 @@ int readFromFDAt(int fd, char *buf, int count, int pos)
     return sizeRead;
 }
 
-int getFileDescriptors(int *fds)
-{
-    int count = 0;
-    for (int i = 0; i < MAX_FDS; i++) {
-        if (fileDescriptors[i].isOpen) {
-            fds[count++] = i;
-        }
-    }
-    return count;
-}

@@ -121,9 +121,9 @@ int32_t free(void *ptr)
 }
 
 // Process management wrappers
-long createProcess(const char *name, int (*entry)(int, char **), int argc, char **argv, int priority, int foreground)
+long createProcess(const char *name, int (*entry)(int, char **), int argc, char **argv, int priority, int foreground, int fds[2])
 {
-    return sys_create_process(name, entry, argc, argv, priority, foreground);
+    return sys_create_process(name, entry, argc, argv, priority, foreground, fds);
 }
 
 long getpid(void)

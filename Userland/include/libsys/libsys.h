@@ -136,7 +136,7 @@ int32_t free(void *ptr);
 
 // Process management wrappers (provided by libsys)
 // These are thin wrappers that call kernel syscalls via libsys
-long createProcess(const char *name, int (*entry)(int, char **), int argc, char **argv, int priority, int foreground);
+long createProcess(const char *name, int (*entry)(int, char **), int argc, char **argv, int priority, int foreground, int fds[2]);
 long getpid(void);
 int32_t kill(long pid);
 int32_t block(long pid);

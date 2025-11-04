@@ -25,6 +25,7 @@ typedef struct
     Priority priority;
     entryPoint entryPoint;
     int foreground;
+    int fds[2];
 } creationParameters;
 
 typedef struct
@@ -40,6 +41,7 @@ typedef struct
     uint64_t *stackBase, *stackEnd;
     int waitReturnValue;
     PID waitPid;
+    int fds[2]; // uno de lectura otro de escritura
 } Process;
 
 
@@ -97,13 +99,7 @@ Process *getProcess(PID pid);
  */
 int kill(PID pid);
 
-/*
- * Terminates all child processes of a given PID.
- * Parameters:
- *   pid - The PID of the parent process.
- * Returns the number of terminated child processes, or a negative value on failure.
- */
-//int killAllChildren(PID pid);
+
 
 /*
  * Waits for a process to finish execution.
@@ -157,7 +153,13 @@ int checkPriority(Priority priority);
  *   fds - Pointer to an array to store the file descriptors.
  * Returns the number of file descriptors, or a negative value on failure.
  */
-//int getFileDescriptors(int *fds);
+int getFileDescriptors(int *fds);
+
+/*
+ * Retrieves the process currently in the foreground of the terminal.
+ * Returns a pointer to the foreground process.
+ */
+Process * getTerminalForegroundProcess(void);
 
 /*
  * Blocks all processes except the shell.
@@ -167,8 +169,3 @@ int checkPriority(Priority priority);
 
 
 
-/*
- * Retrieves the process currently in the foreground of the terminal.
- * Returns a pointer to the foreground process.
- */
-Process * getTerminalForegroundProcess(void);

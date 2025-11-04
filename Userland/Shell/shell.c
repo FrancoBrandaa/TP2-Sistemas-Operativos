@@ -197,6 +197,10 @@ static int execute_command(Command *cmd, int argc, char **argv, int run_in_backg
         // User can override with & at the end of the command
         int is_background = run_in_background || cmd->handler.process.is_background;
 
+        // Get current process FDs to inherit
+        int fds[2] = {0, 1}; // Default STDIN, STDOUT
+        getFD(fds); // Try to get actual FDs, fallback to defaults if it fails (CHEQUIAR ESTO) puede cambiar segun diseño 
+
         // Create a new process
         int pid = createProcess(
             cmd->name,
@@ -204,7 +208,8 @@ static int execute_command(Command *cmd, int argc, char **argv, int run_in_backg
             argc,
             argv,
             cmd->handler.process.priority,
-            !is_background); // foreground parameter is inverted
+            !is_background, // foreground parameter is inverted
+            fds);
 
         if (pid < 0)
         {

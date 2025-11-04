@@ -92,6 +92,8 @@ int main()
 	params.priority = INIT_PRIORITY;
 	params.entryPoint = (entryPoint)&process_idle;
 	params.foreground = 0;
+	params.fds[0] = 0; // STDIN
+	params.fds[1] = 1; // STDOUT
 	createProcess(&params);
 
 	params.name = "shell";
@@ -100,6 +102,8 @@ int main()
 	params.argc = 0;
 	params.argv = NULL;
 	params.priority = SHELL_PRIORITY;
+	params.fds[0] = 0; // STDIN
+	params.fds[1] = 1; // STDOUT
 	createProcess(&params);
 
 	forceSwitchContext(); // para que arranque el primer proceso, no dependo del timer.

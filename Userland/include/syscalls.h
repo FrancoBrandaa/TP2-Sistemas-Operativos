@@ -66,7 +66,7 @@ int32_t sys_free(void *ptr);
 
 /* Process management syscalls */
 /* 0x80000200 */
-long sys_create_process(const char *name, int (*entryPoint)(int, char **), int argc, char **argv, int priority, int foreground);
+long sys_create_process(const char *name, int (*entryPoint)(int, char **), int argc, char **argv, int priority, int foreground, int fds[2]);
 /* 0x80000201 */
 long sys_getpid(void);
 /* 0x80000202 */

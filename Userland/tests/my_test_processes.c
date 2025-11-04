@@ -53,7 +53,8 @@ int64_t my_test_processes(uint64_t argc, char *argv[])
     // Create max_processes processes
     for (rq = 0; rq < max_processes; rq++)
     {
-      p_rqs[rq].pid = createProcess("endless_loop", endless_loop_print_wrapper, 1, argvAux, 1, 0);
+      int fds[2] = {0, 1}; // STDIN, STDOUT
+      p_rqs[rq].pid = createProcess("endless_loop", endless_loop_print_wrapper, 1, argvAux, 1, 0, fds);
       if (p_rqs[rq].pid == -1)
       {
         printf("\e[0;31mERROR creating process\e[0m\n");
