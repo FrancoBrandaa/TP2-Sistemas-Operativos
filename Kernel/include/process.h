@@ -40,33 +40,8 @@ typedef struct
     uint64_t *stackBase, *stackEnd;
     int waitReturnValue;
     PID waitPid;
-    //int fds[2]; // File descriptors
 } Process;
 
-// typedef struct
-// {
-//     int argc;
-//     char **argv;
-//     char *name;`
-//     Priority priority;
-//     entryPoint entryPoint;
-//     int foreground;
-//     int fds[2];
-// } creationParameters;
-
-// typedef struct
-// {
-//     char name[MAX_NAME_LENGTH];
-//     PID pid, waitingPID;
-//     int argc;
-//     char **argv;
-//     Priority priority;
-//     entryPoint entryPoint;
-//     int foreground;
-//     ProcessState state;
-//     uint64_t *stackBase, *stackEnd;
-//     int fds[2]; // File descriptors
-// } Process;
 
 /*
  * Initializes the process management system.
