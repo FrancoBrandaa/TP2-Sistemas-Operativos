@@ -170,19 +170,26 @@ int filter_wrapper(int argc, char **argv)
     (void)argc;
     (void)argv;
 
-    int c;
+    int fds[2];
+    getFD(fds);  // fds[0] = input FD, fds[1] = output FD
 
-    // Leer todo stdin hasta EOF
-    while ((c = getchar()) != EOF)
+    char c;
+    int bytes_read;
+
+    // Leer todo stdin hasta EOF usando FDs correctos
+    while ((bytes_read = read(fds[0], &c, 1)) > 0)
     {
         // Filtrar vocales (mayúsculas y minúsculas)
         if (c != 'a' && c != 'e' && c != 'i' && c != 'o' && c != 'u' &&
             c != 'A' && c != 'E' && c != 'I' && c != 'O' && c != 'U')
         {
-            putchar(c);
+            write(fds[1], &c, 1);
         }
     }
 
+    // Cerrar FDs
+    closeFD(fds[0]);
+    closeFD(fds[1]);
     return 0;
 }
 
@@ -200,14 +207,21 @@ int cat_wrapper(int argc, char **argv)
     (void)argc;
     (void)argv;
 
-    int c;
+    int fds[2];
+    getFD(fds);  // fds[0] = input FD, fds[1] = output FD
 
-    // Leer todo stdin hasta EOF
-    while ((c = getchar()) != EOF)
+    char c;
+    int bytes_read;
+
+    // Leer todo stdin hasta EOF usando FDs correctos
+    while ((bytes_read = read(fds[0], &c, 1)) > 0)
     {
-        putchar(c);
+        write(fds[1], &c, 1);
     }
-
+    
+    // Cerrar FDs para señalar EOF al pipe
+    closeFD(fds[1]);  // Esto debería hacer que filter reciba EOF
+    
     return 0;
 }
 

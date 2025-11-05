@@ -294,7 +294,6 @@ static int execute_command(Command *cmd, int argc, char **argv, int run_in_backg
 // Function to execute a piped command
 static int execute_pipe(char *left_cmd, char *right_cmd)
 {
-    printf("Executing pipe: '%s' | '%s'\n", left_cmd, right_cmd);
     // Parse left command arguments
     char *left_argv[MAX_ARGS];
     int left_argc = 0;
@@ -358,17 +357,15 @@ static int execute_pipe(char *left_cmd, char *right_cmd)
         return -1;
     }
     
-    printf("Pipe created: read_fd=%d, write_fd=%d\n", pipe_fds[0], pipe_fds[1]);
-    
-    // Create left process (background, stdout = pipe write end)
-    int left_fds[2] = {0, pipe_fds[1]}; // stdin=0, stdout=pipe_write
+    // Create left process (foreground, stdout = pipe write end)
+    int left_fds[2] = {FD_STDIN, pipe_fds[1]}; // stdin=FD_STDIN, stdout=pipe_write
     int left_pid = createProcess(
         left_command->name,
         left_command->handler.process.entrypoint,
         left_argc,
         left_argv,
         left_command->handler.process.priority,
-        0, // background (foreground=false)
+        1, // foreground (foreground=true) - FIXED!
         left_fds);
     
     if (left_pid < 0)
@@ -379,17 +376,15 @@ static int execute_pipe(char *left_cmd, char *right_cmd)
         return -1;
     }
     
-    printf("Left process '%s' created with PID: %d (background)\n", left_command->name, left_pid);
-    
-    // Create right process (foreground, stdin = pipe read end)
-    int right_fds[2] = {pipe_fds[0], 1}; // stdin=pipe_read, stdout=1
+    // Create right process (background, stdin = pipe read end) 
+    int right_fds[2] = {pipe_fds[0], FD_STDOUT}; // stdin=pipe_read, stdout=FD_STDOUT
     int right_pid = createProcess(
         right_command->name,
         right_command->handler.process.entrypoint,
         right_argc,
         right_argv,
         right_command->handler.process.priority,
-        1, // foreground (foreground=true)
+        0, // background (foreground=false) - filter reads from pipe, not stdin
         right_fds);
     
     if (right_pid < 0)
@@ -401,29 +396,24 @@ static int execute_pipe(char *left_cmd, char *right_cmd)
         return -1;
     }
     
-    printf("Right process '%s' created with PID: %d (foreground)\n", right_command->name, right_pid);
-    
-    // Close pipe FDs in shell (processes have their own copies)
-    closeFD(pipe_fds[0]);
-    closeFD(pipe_fds[1]);
+    // DON'T close pipe FDs in shell yet - let processes start first!
+    // The processes will close them when they terminate
     
     // Wait for both processes to complete
     int32_t left_status, right_status;
     
     // Wait for the foreground process (right) first
     wait(right_pid, &right_status);
-    printf("\e[0;32mRight process '%s' (PID %d) completed with status: %d\e[0m\n", 
-           right_command->name, right_pid, right_status);
     
     // Wait for the background process (left)
     wait(left_pid, &left_status);
-    printf("\e[0;32mLeft process '%s' (PID %d) completed with status: %d\e[0m\n", 
-           left_command->name, left_pid, left_status);
+    
+    // Now it's safe to close pipe FDs in shell (if they weren't auto-closed)
+    closeFD(pipe_fds[0]);
+    closeFD(pipe_fds[1]);
     
     // Clear any input that was typed during process execution
     clearInputBuffer();
-    
-    printf("\e[0;36mPipe execution completed successfully\e[0m\n");
     
     return 0;
 }

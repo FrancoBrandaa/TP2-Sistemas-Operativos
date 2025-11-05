@@ -7,6 +7,7 @@
 #include <scheduler.h>
 #include <video.h>
 #include <lib.h>
+#include <fds.h>
 
 #define SHELLPID 2
 
@@ -389,8 +390,8 @@ int kill(PID pid)
     pcb->state = EXITED;
     pcb->argv = NULL;
     pcb->argc = 0;
-    // closeFD(pcb->fds[0]);
-    // closeFD(pcb->fds[1]);
+    closeFD(pcb->fds[0]);
+    closeFD(pcb->fds[1]);
 
     // unblockWaitingProcesses(pid, 0);
     if (pcb->waitPid != NONPID)
