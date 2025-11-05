@@ -2,6 +2,9 @@
     "C_Cpp.errorSquiggles": "disabled",
     "files.associations": {
         "stdint.h": "c",
-        "atomic": "cpp"
+        "atomic": "cpp",
+        "commands.h": "c",
+        "libsys.h": "c",
+        "stdio.h": "c"
     }
 }

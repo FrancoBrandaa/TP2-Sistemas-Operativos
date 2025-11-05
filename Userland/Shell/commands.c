@@ -12,6 +12,7 @@
 #include <libsys.h>
 #include <process.h>
 #include <syscalls.h>
+#include <string.h>
 #include "commands.h"
 #include "../tests/test_util.h"
 

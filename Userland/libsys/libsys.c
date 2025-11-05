@@ -220,3 +220,24 @@ int32_t readAtCurrentPos(int fd, char *buf, int count)
 {
     return sys_read_at_current_pos(fd, buf, count);
 }
+
+int32_t read(int fd, void *buf, int count)
+{
+    return sys_read(fd, buf, count);
+}
+
+int32_t write(int fd, const void *buf, int count)
+{
+    return sys_write(fd, buf, count);
+}
+
+// Aliases for consistency
+int32_t openPipe(int fds[2])
+{
+    return sys_pipe(fds);
+}
+
+int32_t closeFD(int fd)
+{
+    return sys_close(fd);
+}

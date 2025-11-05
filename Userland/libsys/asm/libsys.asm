@@ -54,6 +54,8 @@ GLOBAL sys_pipe
 GLOBAL sys_close
 GLOBAL sys_get_fd
 GLOBAL sys_read_at_current_pos
+GLOBAL sys_read
+GLOBAL sys_write
 
 section .text
 
@@ -132,3 +134,5 @@ sys_pipe: sys_int80 0x80000400
 sys_close: sys_int80 0x80000401
 sys_get_fd: sys_int80 0x80000402
 sys_read_at_current_pos: sys_int80 0x80000403
+sys_read: sys_int80 3
+sys_write: sys_int80 4
