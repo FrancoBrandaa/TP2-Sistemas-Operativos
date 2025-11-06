@@ -16,8 +16,6 @@
 #include "commands.h"
 #include "../tests/test_util.h"
 
-
-
 /**
  * counter_wrapper - Counts from 1 to N and exits
  *
@@ -171,7 +169,7 @@ int filter_wrapper(int argc, char **argv)
     (void)argv;
 
     int fds[2];
-    getFD(fds);  // fds[0] = input FD, fds[1] = output FD
+    getFD(fds); // fds[0] = input FD, fds[1] = output FD
 
     char c;
     int bytes_read;
@@ -208,7 +206,7 @@ int cat_wrapper(int argc, char **argv)
     (void)argv;
 
     int fds[2];
-    getFD(fds);  // fds[0] = input FD, fds[1] = output FD
+    getFD(fds); // fds[0] = input FD, fds[1] = output FD
 
     char c;
     int bytes_read;
@@ -218,10 +216,10 @@ int cat_wrapper(int argc, char **argv)
     {
         write(fds[1], &c, 1);
     }
-    
+
     // Cerrar FDs para señalar EOF al pipe
-    closeFD(fds[1]);  // Esto debería hacer que filter reciba EOF
-    
+    closeFD(fds[1]); // Esto debería hacer que filter reciba EOF
+
     return 0;
 }
 
@@ -289,7 +287,7 @@ int wc_wrapper(int argc, char **argv)
 
     // Obtener FDs del proceso
     int fds[2];
-    getFD(fds);  // fds[0] = input FD, fds[1] = output FD
+    getFD(fds); // fds[0] = input FD, fds[1] = output FD
 
     char c_char;
     int bytes_read;
@@ -297,7 +295,7 @@ int wc_wrapper(int argc, char **argv)
     // Leer todo stdin hasta EOF usando FDs correctos
     while ((bytes_read = read(fds[0], &c_char, 1)) > 0)
     {
-        c = (int)c_char;  // Convertir para compatibilidad con el código existente
+        c = (int)c_char; // Convertir para compatibilidad con el código existente
         char_count++;
 
         // Contar líneas
@@ -357,6 +355,216 @@ int wc_wrapper(int argc, char **argv)
     // Cerrar FDs
     closeFD(fds[0]);
     closeFD(fds[1]);
+
+    return 0;
+}
+
+/* ============================================================================
+ * MVAR - Multiple Readers/Writers on Shared Variable
+ * ============================================================================ */
+
+// Shared variable and synchronization structures
+typedef struct
+{
+    char value;       // The shared variable
+    int is_empty;     // 1 if empty, 0 if full
+    int writer_count; // Number of writers
+    int reader_count; // Number of readers
+    int sem_mutex;    // Semaphore for mutual exclusion
+    int sem_empty;    // Semaphore to signal empty state
+    int sem_full;     // Semaphore to signal full state
+} MvarShared;
+
+static MvarShared *mvar_shared = NULL;
+
+/**
+ * mvar_writer - Writer process that writes its letter to the shared variable
+ *
+ * @param argc Argument count
+ * @param argv argv[0] = letter to write ('A', 'B', 'C', etc.)
+ * @return 0 on success
+ */
+int mvar_writer(int argc, char **argv)
+{
+    if (argc < 1 || mvar_shared == NULL)
+    {
+        return -1;
+    }
+
+    char letter = argv[0][0];
+
+    // Writers run in a loop, continuously trying to write
+    while (1)
+    {
+        // Random active wait before trying to write (shorter first time)
+        uint64_t random_wait = (GetUniform(500) + 100) * 1000000; // 100-600ms
+        bussy_wait(random_wait);
+
+        // Wait for variable to be empty
+        semWait(mvar_shared->sem_empty);
+
+        // Write to the variable
+        semWait(mvar_shared->sem_mutex);
+        mvar_shared->value = letter;
+        mvar_shared->is_empty = 0;
+        semPost(mvar_shared->sem_mutex);
+
+        // Signal that variable is full
+        semPost(mvar_shared->sem_full);
+    }
+
+    return 0;
+}
+
+/**
+ * mvar_reader - Reader process that reads and prints the shared variable
+ *
+ * @param argc Argument count
+ * @param argv argv[0] = color code for this reader
+ * @return 0 on success
+ */
+int mvar_reader(int argc, char **argv)
+{
+    if (argc < 1 || mvar_shared == NULL)
+    {
+        return -1;
+    }
+
+    int color = satoi(argv[0]);
+
+    // ANSI color codes
+    const char *color_codes[] = {
+        "\033[0;31m", // Red
+        "\033[0;32m", // Green
+        "\033[0;33m", // Yellow
+        "\033[0;34m", // Blue
+        "\033[0;35m", // Magenta
+        "\033[0;36m", // Cyan
+    };
+    const char *color_code = color_codes[color % 6];
+
+    // Readers run in a loop, continuously trying to read
+    while (1)
+    {
+        // Random active wait before trying to read (shorter first time)
+        uint64_t random_wait = (GetUniform(500) + 100) * 1000000; // 100-600ms
+        bussy_wait(random_wait);
+
+        // Wait for variable to be full
+        semWait(mvar_shared->sem_full);
+
+        // Read the variable and print with color
+        semWait(mvar_shared->sem_mutex);
+        char read_value = mvar_shared->value;
+        mvar_shared->is_empty = 1;
+
+        // Simple output: just print the letter with the color code
+        printf("%s%c\033[0m", color_code, read_value);
+
+        semPost(mvar_shared->sem_mutex);
+
+        // Signal that variable is empty
+        semPost(mvar_shared->sem_empty);
+    }
+
+    return 0;
+}
+
+/**
+ * mvar_wrapper - Main wrapper for mvar command
+ *
+ * Usage: mvar <writers> <readers>
+ * Creates writer processes (each with a letter A, B, C, ...) and reader processes
+ * (each with a different color). Writers write their letter to a shared variable,
+ * readers read and print with their color.
+ *
+ * The processes run indefinitely until killed. The main process terminates immediately
+ * after creating all writer and reader processes.
+ */
+int mvar_wrapper(int argc, char **argv)
+{
+    if (argc < 3)
+    {
+        printf("Usage: mvar <writers> <readers>\n");
+        printf("  writers: number of writer processes (each gets a letter A, B, C, ...)\n");
+        printf("  readers: number of reader processes (each gets a different color)\n");
+        return -1;
+    }
+
+    int writers = satoi(argv[1]);
+    int readers = satoi(argv[2]);
+
+    if (writers <= 0 || readers <= 0 || writers > 26)
+    {
+        printf("Error: Invalid number of writers or readers\n");
+        printf("Writers must be between 1 and 26, readers must be at least 1\n");
+        return -1;
+    }
+
+    printf("\e[1;36m=== MVAR: Starting with %d writers and %d readers ===\e[0m\n", writers, readers);
+
+    // Allocate shared memory
+    mvar_shared = (MvarShared *)malloc(sizeof(MvarShared));
+    if (mvar_shared == NULL)
+    {
+        printf("Error: Could not allocate shared memory\n");
+        return -1;
+    }
+
+    // Initialize shared structure
+    mvar_shared->value = '\0';
+    mvar_shared->is_empty = 1;
+    mvar_shared->writer_count = writers;
+    mvar_shared->reader_count = readers;
+
+    // Create semaphores
+    mvar_shared->sem_mutex = semOpen("mvar_mutex", 1); // Mutual exclusion
+    mvar_shared->sem_empty = semOpen("mvar_empty", 1); // Variable is empty (writers can write)
+    mvar_shared->sem_full = semOpen("mvar_full", 0);   // Variable is full (readers can read)
+
+    if (mvar_shared->sem_mutex < 0 || mvar_shared->sem_empty < 0 || mvar_shared->sem_full < 0)
+    {
+        printf("Error: Could not create semaphores\n");
+        free(mvar_shared);
+        return -1;
+    }
+
+    int default_fds[2] = {0, 1}; // stdin, stdout
+
+    // Create writers
+    for (int i = 0; i < writers; i++)
+    {
+        char letter[2];
+        letter[0] = 'A' + i;
+        letter[1] = '\0';
+
+        char *writer_argv[] = {letter, NULL};
+        int64_t pid = createProcess("mvar_writer", mvar_writer, 1, writer_argv, 3, 0, default_fds);
+        if (pid < 0)
+        {
+            printf("Error: Could not create writer %d\n", i);
+        }
+    }
+
+    // Create readers
+    for (int i = 0; i < readers; i++)
+    {
+        char color_str[10];
+        int_to_string(i, color_str);
+
+        char *reader_argv[] = {color_str, NULL};
+        int64_t pid = createProcess("mvar_reader", mvar_reader, 1, reader_argv, 3, 0, default_fds);
+        if (pid < 0)
+        {
+            printf("Error: Could not create reader %d\n", i);
+        }
+    }
+
+    printf("\e[1;32m=== MVAR: All processes created and running ===\e[0m\n");
+    printf("\e[1;33m=== Use 'ps' to see processes, 'kill <pid>' to stop them ===\e[0m\n");
+
+    // Note: We don't wait for processes or cleanup semaphores because they run indefinitely
+    // The user must manually kill the processes when done
 
     return 0;
 }

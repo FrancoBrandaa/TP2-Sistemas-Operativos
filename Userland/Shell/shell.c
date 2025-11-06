@@ -178,6 +178,12 @@ Command commands[] = {
      .usage = "test_no_synchro [iterations]",
      .type = CMD_PROCESS,
      .handler.process = {.entrypoint = test_no_synchro_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
+
+    {.name = "mvar",
+     .description = "Multiple readers/writers synchronization problem",
+     .usage = "mvar <writers> <readers>",
+     .type = CMD_PROCESS,
+     .handler.process = {.entrypoint = mvar_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
 };
 
 Command *find_command(const char *name)

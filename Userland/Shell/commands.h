@@ -59,5 +59,6 @@ int loop_ps_wrapper(int argc, char **argv);
 int filter_wrapper(int argc, char **argv);
 int cat_wrapper(int argc, char **argv);
 int wc_wrapper(int argc, char **argv);
+int mvar_wrapper(int argc, char **argv);
 
 #endif // COMMANDS_H
