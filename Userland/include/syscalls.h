@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <libsys.h>
+#include <process.h>
 
 // Linux syscall prototypes
 int32_t sys_write(int64_t fd, const void *buf, int64_t count);
@@ -66,7 +67,7 @@ int32_t sys_free(void *ptr);
 
 /* Process management syscalls */
 /* 0x80000200 */
-long sys_create_process(const char *name, int (*entryPoint)(int, char **), int argc, char **argv, int priority, int foreground, int fds[2]);
+long sys_create_process(void *creationParams);
 /* 0x80000201 */
 long sys_getpid(void);
 /* 0x80000202 */

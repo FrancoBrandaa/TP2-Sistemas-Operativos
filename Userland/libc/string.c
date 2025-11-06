@@ -150,131 +150,51 @@ void * memmove(void * dest, const void * src, int n)
     return dest;
 }
 
+
 // Convierte un entero a string en base 10
 // num: El número a convertir
 // str: Buffer donde escribir el resultado
 // Return: Número de caracteres escritos
-static int int_to_string(int num, char *str)
+int int_to_string(int num, char *str)
 {
-    int i = 0;
-    int is_negative = 0;
-    
-    if (num == 0)
-    {
+    if (num == 0) {
         str[0] = '0';
         str[1] = '\0';
         return 1;
     }
     
-    if (num < 0)
-    {
+    int i = 0;
+    int is_negative = 0;
+    
+    if (num < 0) {
         is_negative = 1;
         num = -num;
     }
     
-    // Convertir dígitos en orden inverso
-    while (num > 0)
-    {
-        str[i++] = (num % 10) + '0';
-        num /= 10;
+    // Contar dígitos y construir string al revés
+    int temp = num;
+    int digit_count = 0;
+    while (temp != 0) {
+        digit_count++;
+        temp /= 10;
     }
     
-    if (is_negative)
-    {
+    // Agregar signo negativo si es necesario
+    if (is_negative) {
         str[i++] = '-';
     }
     
-    str[i] = '\0';
+    // Construir los dígitos
+    int start = i;
+    i += digit_count - 1;
+    str[i + 1] = '\0';
     
-    // Invertir la cadena
-    int len = i;
-    for (int j = 0; j < len / 2; j++)
-    {
-        char temp = str[j];
-        str[j] = str[len - 1 - j];
-        str[len - 1 - j] = temp;
+    while (num != 0) {
+        str[i] = (num % 10) + '0';
+        num /= 10;
+        i--;
     }
     
-    return len;
+    return digit_count + (is_negative ? 1 : 0);
 }
 
-// Implementación básica de sprintf
-// dest: Buffer de destino
-// format: String de formato
-// ...: Argumentos variables
-// Return: Número de caracteres escritos
-int sprintf(char *dest, const char *format, ...)
-{
-    char *d = dest;
-    const char *f = format;
-    int written = 0;
-    
-    // Obtener argumentos variables (implementación simple)
-    // Asumimos que los argumentos están en el stack después de format
-    int *args = (int *)(&format + 1);
-    int arg_index = 0;
-    
-    while (*f != '\0')
-    {
-        if (*f == '%' && *(f + 1) != '\0')
-        {
-            f++; // Saltar el '%'
-            
-            switch (*f)
-            {
-                case 'd': // Entero decimal
-                {
-                    char num_str[32];
-                    int len = int_to_string(args[arg_index++], num_str);
-                    for (int i = 0; i < len; i++)
-                    {
-                        *d++ = num_str[i];
-                        written++;
-                    }
-                    break;
-                }
-                case 's': // String
-                {
-                    char *str = (char *)args[arg_index++];
-                    if (str != NULL)
-                    {
-                        while (*str != '\0')
-                        {
-                            *d++ = *str++;
-                            written++;
-                        }
-                    }
-                    break;
-                }
-                case 'c': // Carácter
-                {
-                    *d++ = (char)args[arg_index++];
-                    written++;
-                    break;
-                }
-                case '%': // Literal '%'
-                {
-                    *d++ = '%';
-                    written++;
-                    break;
-                }
-                default:
-                    // Especificador no soportado, copiar literal
-                    *d++ = '%';
-                    *d++ = *f;
-                    written += 2;
-                    break;
-            }
-        }
-        else
-        {
-            // Carácter normal, copiar directamente
-            *d++ = *f;
-            written++;
-        }
-        f++;
-    }
-    
-    *d = '\0'; // Null terminator
-    return written;
-}

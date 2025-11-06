@@ -16,6 +16,8 @@
 #include "commands.h"
 #include "../tests/test_util.h"
 
+
+
 /**
  * counter_wrapper - Counts from 1 to N and exits
  *
@@ -287,9 +289,17 @@ int wc_wrapper(int argc, char **argv)
         show_chars = 1;
     }
 
-    // Leer todo stdin hasta EOF
-    while ((c = getchar()) != EOF)
+    // Obtener FDs del proceso
+    int fds[2];
+    getFD(fds);  // fds[0] = input FD, fds[1] = output FD
+
+    char c_char;
+    int bytes_read;
+
+    // Leer todo stdin hasta EOF usando FDs correctos
+    while ((bytes_read = read(fds[0], &c_char, 1)) > 0)
     {
+        c = (int)c_char;  // Convertir para compatibilidad con el código existente
         char_count++;
 
         // Contar líneas
@@ -323,20 +333,32 @@ int wc_wrapper(int argc, char **argv)
         word_count++;
     }
 
-    // Mostrar resultados según las opciones
+    // Mostrar resultados según las opciones usando el FD de salida correcto
     if (show_lines)
     {
-        printf("%d lineas\n", line_count);
+        char line_str[50];
+        int_to_string(line_count, line_str);
+        write(fds[1], line_str, strlen(line_str));
+        write(fds[1], " lineas\n", 8);
     }
     if (show_words)
     {
-        printf("%d palabras\n", word_count);
+        char word_str[50];
+        int_to_string(word_count, word_str);
+        write(fds[1], word_str, strlen(word_str));
+        write(fds[1], " palabras\n", 10);
     }
     if (show_chars)
     {
-        printf("%d caracteres\n", char_count);
+        char char_str[50];
+        int_to_string(char_count, char_str);
+        write(fds[1], char_str, strlen(char_str));
+        write(fds[1], " caracteres\n", 12);
     }
 
+    // Cerrar FDs
+    closeFD(fds[0]);
+    closeFD(fds[1]);
 
     return 0;
 }

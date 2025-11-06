@@ -12,6 +12,6 @@ void perror(const char * s1);
 char * strtok(char * s1, const char * s2);
 char * strchr(const char * s, int c);
 void * memmove(void * dest, const void * src, int n);
-int sprintf(char *dest, const char *format, ...);
+int int_to_string(int num, char *str);
 
 #endif

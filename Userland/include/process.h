@@ -36,6 +36,17 @@ typedef struct
     int fds[2]; // uno de lectura otro de escritura
 } Process;
 
+typedef struct
+{
+    int argc;
+    char **argv;
+    char *name;
+    Priority priority;
+    entryPoint entryPoint;
+    int foreground;
+    int fds[2];
+} creationParameters;
+
 // Free the memory returned by ps()
 void freeProcessInfo(Process *processesInfo);
 

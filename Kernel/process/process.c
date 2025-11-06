@@ -455,7 +455,6 @@ Process *getTerminalForegroundProcess()
 
 int getFileDescriptors(int *fds)
 {
-
     Process *currentProcess = getCurrentProcess();
     if (currentProcess == NULL)
     {

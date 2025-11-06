@@ -5,6 +5,7 @@
         "atomic": "cpp",
         "commands.h": "c",
         "libsys.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "ratio": "c"
     }
 }
