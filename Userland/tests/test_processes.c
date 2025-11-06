@@ -34,6 +34,7 @@ int64_t test_processes(uint64_t argc, char *argv[])
   p_rq p_rqs[max_processes];
   int iteration = 0;
 
+  int default_fds[2] = {0, 1}; // stdin, stdout
   while (1)
   {
     
@@ -42,7 +43,7 @@ int64_t test_processes(uint64_t argc, char *argv[])
     // Create max_processes processes
     for (rq = 0; rq < max_processes; rq++)
     {
-      p_rqs[rq].pid = createProcess("endless_loop", endless_loop_wrapper, 0, argvAux, 2, 0); // Background (0)
+      p_rqs[rq].pid = createProcess("endless_loop", endless_loop_wrapper, 0, argvAux, 2, 0, default_fds); // Background (0)
 
       if (p_rqs[rq].pid == -1)
       {

@@ -86,14 +86,15 @@ uint64_t test_sync(uint64_t argc, char *argv[])
   global = 0;
 
   uint64_t i;
+  int default_fds[2] = {0, 1}; // stdin, stdout
   for (i = 0; i < TOTAL_PAIR_PROCESSES; i++)
   {
     // Crear procesos decrementadores
     extern int process_inc_wrapper(int argc, char **argv);
-    pids[i] = createProcess("process_inc", process_inc_wrapper, 3, argvDec, 5, 0);
+    pids[i] = createProcess("process_inc", process_inc_wrapper, 3, argvDec, 5, 0, default_fds);
     printf("Created decrementing process with PID %d\n", pids[i]);
     // Crear procesos incrementadores
-    pids[i + TOTAL_PAIR_PROCESSES] = createProcess("process_inc", process_inc_wrapper, 3, argvInc, 5, 0);
+    pids[i + TOTAL_PAIR_PROCESSES] = createProcess("process_inc", process_inc_wrapper, 3, argvInc, 5, 0, default_fds);
     printf("Created incrementing process with PID %d\n", pids[i + TOTAL_PAIR_PROCESSES]);
   } // crea cuatro procesos, dos que incrementan y dos que decrementan
 

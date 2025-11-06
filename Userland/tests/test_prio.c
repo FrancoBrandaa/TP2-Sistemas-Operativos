@@ -30,8 +30,9 @@ uint64_t test_prio(uint64_t argc, char *argv[])
 
   printf("SAME PRIORITY...\n");
 
+  int default_fds[2] = {0, 1}; // stdin, stdout
   for (i = 0; i < TOTAL_PROCESSES; i++)
-    pids[i] = createProcess("zero_to_max", zero_to_max_wrapper, 0, ztm_argv, 1, 1);
+    pids[i] = createProcess("zero_to_max", zero_to_max_wrapper, 0, ztm_argv, 1, 1, default_fds);
 
   // Expect to see them finish at the same time
 
@@ -42,7 +43,7 @@ uint64_t test_prio(uint64_t argc, char *argv[])
 
   for (i = 0; i < TOTAL_PROCESSES; i++)
   {
-    pids[i] = createProcess("zero_to_max", zero_to_max_wrapper, 0, ztm_argv, 1, 1);
+    pids[i] = createProcess("zero_to_max", zero_to_max_wrapper, 0, ztm_argv, 1, 1, default_fds);
     nice(pids[i], prio[i]);
     printf("  PROCESS %d NEW PRIORITY: %d\n", pids[i], prio[i]);
   }
@@ -56,7 +57,7 @@ uint64_t test_prio(uint64_t argc, char *argv[])
 
   for (i = 0; i < TOTAL_PROCESSES; i++)
   {
-    pids[i] = createProcess("zero_to_max", zero_to_max_wrapper, 0, ztm_argv, 1, 1);
+    pids[i] = createProcess("zero_to_max", zero_to_max_wrapper, 0, ztm_argv, 1, 1, default_fds);
     block(pids[i]);
     nice(pids[i], prio[i]);
     printf("  PROCESS %d NEW PRIORITY: %d\n", pids[i], prio[i]);

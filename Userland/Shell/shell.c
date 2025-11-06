@@ -212,29 +212,29 @@ static int parse_pipe_command(char *command_buffer, char *left_cmd, char *right_
 {
     // Find the pipe character
     char *pipe_pos = strchr(command_buffer, '|');
-    
+
     if (pipe_pos == NULL)
     {
         return 0; // No pipe found
     }
-    
+
     // Calculate lengths
     int left_len = pipe_pos - command_buffer;
-    
+
     // Copy left command (before pipe)
     strncpy(left_cmd, command_buffer, left_len);
     left_cmd[left_len] = '\0';
-    
+
     // Copy right command (after pipe)
     strcpy(right_cmd, pipe_pos + 1);
-    
+
     // Trim whitespace from both commands
     // Trim left command (trailing spaces)
     while (left_len > 0 && (left_cmd[left_len - 1] == ' ' || left_cmd[left_len - 1] == '\t'))
     {
         left_cmd[--left_len] = '\0';
     }
-    
+
     // Trim right command (leading whitespace)
     char *right_start = right_cmd;
     while (*right_start == ' ' || *right_start == '\t')
@@ -245,13 +245,13 @@ static int parse_pipe_command(char *command_buffer, char *left_cmd, char *right_
     {
         memmove(right_cmd, right_start, strlen(right_start) + 1);
     }
-    
+
     // Validate both commands are not empty
     if (strlen(left_cmd) == 0 || strlen(right_cmd) == 0)
     {
         return -1; // Invalid pipe syntax
     }
-    
+
     return 1; // Pipe found and parsed successfully
 }
 
@@ -271,7 +271,7 @@ static int execute_command(Command *cmd, int argc, char **argv, int run_in_backg
 
         // Get current process FDs to inherit
         int fds[2] = {0, 1}; // Default STDIN, STDOUT
-        getFD(fds); // Try to get actual FDs, fallback to defaults if it fails (CHEQUIAR ESTO) puede cambiar segun diseño 
+        getFD(fds);          // Try to get actual FDs, fallback to defaults if it fails (CHEQUIAR ESTO) puede cambiar segun diseño
 
         // Create a new process
         int pid = createProcess(
@@ -324,55 +324,55 @@ static int execute_pipe(char *left_cmd, char *right_cmd)
     char left_buffer[MAX_BUFFER_SIZE];
     strncpy(left_buffer, left_cmd, MAX_BUFFER_SIZE);
     left_buffer[MAX_BUFFER_SIZE - 1] = '\0';
-    
+
     if (parse_arguments(left_buffer, &left_argc, left_argv) != 0 || left_argc == 0)
     {
         fprintf(FD_STDERR, "\e[0;31mError: Invalid left command in pipe\e[0m\n");
         return -1;
     }
-    
+
     // Parse right command arguments
     char *right_argv[MAX_ARGS];
     int right_argc = 0;
     char right_buffer[MAX_BUFFER_SIZE];
     strncpy(right_buffer, right_cmd, MAX_BUFFER_SIZE);
     right_buffer[MAX_BUFFER_SIZE - 1] = '\0';
-    
+
     if (parse_arguments(right_buffer, &right_argc, right_argv) != 0 || right_argc == 0)
     {
         fprintf(FD_STDERR, "\e[0;31mError: Invalid right command in pipe\e[0m\n");
         return -1;
     }
-    
+
     // Find both commands
     Command *left_command = find_command(left_argv[0]);
     Command *right_command = find_command(right_argv[0]);
-    
+
     if (left_command == NULL)
     {
         fprintf(FD_STDERR, "\e[0;31mError: Left command '%s' not found\e[0m\n", left_argv[0]);
         return -1;
     }
-    
+
     if (right_command == NULL)
     {
         fprintf(FD_STDERR, "\e[0;31mError: Right command '%s' not found\e[0m\n", right_argv[0]);
         return -1;
     }
-    
+
     // For now, only support process-to-process pipes (not built-ins)
     if (left_command->type != CMD_PROCESS)
     {
         fprintf(FD_STDERR, "\e[0;31mError: Left command '%s' must be a process (built-ins not supported in pipes yet)\e[0m\n", left_argv[0]);
         return -1;
     }
-    
+
     if (right_command->type != CMD_PROCESS)
     {
         fprintf(FD_STDERR, "\e[0;31mError: Right command '%s' must be a process (built-ins not supported in pipes yet)\e[0m\n", right_argv[0]);
         return -1;
     }
-    
+
     // Create pipe (get pipe file descriptors)
     int pipe_fds[2];
     if (openPipe(pipe_fds) != 0)
@@ -380,7 +380,7 @@ static int execute_pipe(char *left_cmd, char *right_cmd)
         fprintf(FD_STDERR, "\e[0;31mError: Could not create pipe\e[0m\n");
         return -1;
     }
-    
+
     // Create left process (foreground, stdout = pipe write end)
     int left_fds[2] = {FD_STDIN, pipe_fds[1]}; // stdin=FD_STDIN, stdout=pipe_write
     int left_pid = createProcess(
@@ -391,7 +391,7 @@ static int execute_pipe(char *left_cmd, char *right_cmd)
         left_command->handler.process.priority,
         1, // foreground (foreground=true) - FIXED!
         left_fds);
-    
+
     if (left_pid < 0)
     {
         fprintf(FD_STDERR, "\e[0;31mError: Could not create left process '%s'\e[0m\n", left_command->name);
@@ -399,8 +399,8 @@ static int execute_pipe(char *left_cmd, char *right_cmd)
         closeFD(pipe_fds[1]);
         return -1;
     }
-    
-    // Create right process (background, stdin = pipe read end) 
+
+    // Create right process (background, stdin = pipe read end)
     int right_fds[2] = {pipe_fds[0], FD_STDOUT}; // stdin=pipe_read, stdout=FD_STDOUT
     int right_pid = createProcess(
         right_command->name,
@@ -410,7 +410,7 @@ static int execute_pipe(char *left_cmd, char *right_cmd)
         right_command->handler.process.priority,
         0, // background (foreground=false) - filter reads from pipe, not stdin
         right_fds);
-    
+
     if (right_pid < 0)
     {
         fprintf(FD_STDERR, "\e[0;31mError: Could not create right process '%s'\e[0m\n", right_command->name);
@@ -419,90 +419,140 @@ static int execute_pipe(char *left_cmd, char *right_cmd)
         closeFD(pipe_fds[1]);
         return -1;
     }
-    
+
     // DON'T close pipe FDs in shell yet - let processes start first!
     // The processes will close them when they terminate
-    
+
     // Wait for both processes to complete
     int32_t left_status, right_status;
-    
+
     // Wait for the foreground process (right) first
     wait(right_pid, &right_status);
-    
+
     // Wait for the background process (left)
     wait(left_pid, &left_status);
-    
+
     // Now it's safe to close pipe FDs in shell (if they weren't auto-closed)
     closeFD(pipe_fds[0]);
     closeFD(pipe_fds[1]);
-    
+
     // Clear any input that was typed during process execution
     clearInputBuffer();
-    
+
     return 0;
 }
 
 // KEYBOARD HISTORY
 static void printPreviousCommand(enum REGISTERABLE_KEYS scancode)
 {
-    clearInputBuffer();
-    last_command_arrowed = SUB_MOD(last_command_arrowed, 1, HISTORY_SIZE);
+    // Calculate the previous position
+    uint8_t prev_position = SUB_MOD(last_command_arrowed, 1, HISTORY_SIZE);
 
-    if (command_history[last_command_arrowed][0] != 0)
-        fprintf(FD_STDIN, command_history[last_command_arrowed]);
+    // Check if there's a valid command at the previous position
+    if (command_history[prev_position][0] == 0)
+    {
+        // No more commands in history, don't move
+        return;
+    }
+
+    // Clear keyboard buffer
+    clearInputBuffer();
+
+    // Clear the entire line by returning to start and overwriting with spaces
+    fprintf(FD_STDOUT, "\r");
+    for (int i = 0; i < buffer_dim + 20; i++) // +20 for "shell $ " prompt and margin
+    {
+        fprintf(FD_STDOUT, " ");
+    }
+
+    // Return to start and reprint prompt
+    fprintf(FD_STDOUT, "\r\e[0mshell \e[0;32m$\e[0m ");
+
+    // Reset shell buffer
+    buffer_dim = 0;
+    buffer[0] = '\0';
+
+    // Navigate to previous command
+    last_command_arrowed = prev_position;
+
+    // Copy to buffer and display
+    strncpy(buffer, command_history[last_command_arrowed], MAX_BUFFER_SIZE - 1);
+    buffer[MAX_BUFFER_SIZE - 1] = '\0';
+    buffer_dim = strlen(buffer);
+    strncpy(command_history_buffer, buffer, MAX_BUFFER_SIZE - 1);
+
+    fprintf(FD_STDOUT, "%s", buffer);
 }
 
 static void printNextCommand(enum REGISTERABLE_KEYS scancode)
 {
-    clearInputBuffer();
-    last_command_arrowed = (last_command_arrowed + 1) % HISTORY_SIZE;
+    // Calculate the next position
+    uint8_t next_position = (last_command_arrowed + 1) % HISTORY_SIZE;
 
-    if (command_history[last_command_arrowed][0] != 0)
-        fprintf(FD_STDIN, command_history[last_command_arrowed]);
+    // If next position is the current write position (command_history_last),
+    // we've reached the end - clear the line instead
+    if (next_position == command_history_last)
+    {
+        // Clear keyboard buffer
+        clearInputBuffer();
+
+        // Clear the entire line
+        fprintf(FD_STDOUT, "\r");
+        for (int i = 0; i < buffer_dim + 20; i++)
+        {
+            fprintf(FD_STDOUT, " ");
+        }
+
+        // Return to start and reprint prompt
+        fprintf(FD_STDOUT, "\r\e[0mshell \e[0;32m$\e[0m ");
+
+        // Reset to empty buffer (at the "present")
+        buffer_dim = 0;
+        buffer[0] = '\0';
+        command_history_buffer[0] = '\0';
+        last_command_arrowed = command_history_last;
+        return;
+    }
+
+    // Check if there's a valid command at the next position
+    if (command_history[next_position][0] == 0)
+    {
+        // No command here, don't move
+        return;
+    }
+
+    // Clear keyboard buffer
+    clearInputBuffer();
+
+    // Clear the entire line by returning to start and overwriting with spaces
+    fprintf(FD_STDOUT, "\r");
+    for (int i = 0; i < buffer_dim + 20; i++) // +20 for "shell $ " prompt and margin
+    {
+        fprintf(FD_STDOUT, " ");
+    }
+
+    // Return to start and reprint prompt
+    fprintf(FD_STDOUT, "\r\e[0mshell \e[0;32m$\e[0m ");
+
+    // Reset shell buffer
+    buffer_dim = 0;
+    buffer[0] = '\0';
+
+    // Navigate to next command
+    last_command_arrowed = next_position;
+
+    // Copy to buffer and display
+    strncpy(buffer, command_history[last_command_arrowed], MAX_BUFFER_SIZE - 1);
+    buffer[MAX_BUFFER_SIZE - 1] = '\0';
+    buffer_dim = strlen(buffer);
+    strncpy(command_history_buffer, buffer, MAX_BUFFER_SIZE - 1);
+
+    fprintf(FD_STDOUT, "%s", buffer);
 }
 
 int main()
 {
     clear(0, NULL);
-
-    // // TEST_SYNC - Test de sincronización con semáforos
-    // printf("\e[1;35m=== INICIANDO TEST_SYNC ===\e[0m\n");
-    // printf("Este test verifica la sincronización con semáforos.\n");
-    // printf("Sin semáforo: resultado impredecible debido a race conditions.\n");
-    // printf("Con semáforo: resultado deterministico (debería ser 0).\n\n");
-
-    // //Test sin semáforo
-    // printf("\e[1;31m--- Test SIN semaforo ---\e[0m\n");
-    // char *sync_argv_no_sem[] = {"100", "0"}; // 100 iteraciones, sin semáforo
-    // test_sync(2, sync_argv_no_sem);
-    // printf("\n");
-
-    // // Test con semáforo
-    // printf("\e[1;32m--- Test CON semaforo ---\e[0m\n");
-    // char *sync_argv_with_sem[] = {"10", "1"}; // 100 iteraciones, con semáforo
-    // test_sync(2, sync_argv_with_sem);
-    // printf("\n\e[1;32m=== TEST_SYNC FINALIZADO ===\e[0m\n\n");
-
-    // // TEST_PRIO - Test de prioridades
-    // printf("\e[1;36m=== INICIANDO TEST_PRIO ===\e[0m\n");
-    // printf("Este test crea 3 procesos con diferentes prioridades.\n");
-    // printf("Deberías ver diferencias en el orden de finalización.\n\n");
-
-    // char *prio_argv[] = {"100000000"}; // Max value para contar
-    // test_prio(1, prio_argv);
-    // printf("\n\e[1;32m=== TEST_PRIO FINALIZADO ===\e[0m\n\n");
-    // // ========================================================================
-
-    // // MY_TEST_PROCESSES - Version mejorada con colores y delays
-    // printf("\e[1;33m=== INICIANDO MY_TEST_PROCESSES ===\e[0m\n");
-    // printf("Creando 3 procesos que imprimen su PID constantemente...\n");
-    // printf("El test los crea, bloquea, desbloquea y mata aleatoriamente.\n\n");
-
-    // char *test_argv[] = {"3"}; // Crear 3 procesos
-    // my_test_processes(1, test_argv);
-    // // ========================================================================
-
-    // ps(NULL, NULL);
 
     registerKey(KP_UP_KEY, printPreviousCommand);
     registerKey(KP_DOWN_KEY, printNextCommand);
@@ -567,18 +617,18 @@ int main()
         static char left_cmd[MAX_BUFFER_SIZE];
         static char right_cmd[MAX_BUFFER_SIZE];
         static char pipe_buffer[MAX_BUFFER_SIZE];
-        
+
         // Make a copy for pipe parsing (since parse_pipe_command modifies the string)
         strncpy(pipe_buffer, command_buffer, MAX_BUFFER_SIZE);
         pipe_buffer[MAX_BUFFER_SIZE - 1] = '\0'; // Ensure null termination
-        
+
         int pipe_result = parse_pipe_command(pipe_buffer, left_cmd, right_cmd);
-        
+
         if (pipe_result == 1)
         {
             // Valid pipe found, execute it
             last_command_output = execute_pipe(left_cmd, right_cmd);
-            
+
             // Save to history
             strncpy(command_history[command_history_last], command_history_buffer, MAX_BUFFER_SIZE - 1);
             command_history[command_history_last][buffer_dim] = '\0';
