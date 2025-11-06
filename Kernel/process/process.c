@@ -180,6 +180,8 @@ PID createProcess(creationParameters *params)
     processes[allocatedProcess].argc = params->argc;
     processes[allocatedProcess].argv = args;
     processes[allocatedProcess].priority = params->priority;
+    processes[allocatedProcess].originalPriority = params->priority; // For aging
+    processes[allocatedProcess].agingCounter = 0; // Initialize aging counter
     processes[allocatedProcess].entryPoint = params->entryPoint;
     processes[allocatedProcess].foreground = params->foreground;
     processes[allocatedProcess].waitPid = NONPID;
@@ -421,12 +423,14 @@ int changeProccessPriority(PID pid, Priority priority)
     Process *pcb = &processes[pid - 1];
 
     // If priority hasn't changed, nothing to do
-    if (pcb->priority == priority)
+    if (pcb->originalPriority == priority)
     {
         return 0;
     }
 
     pcb->priority = priority;
+    pcb->originalPriority = priority; // Update original priority
+    pcb->agingCounter = 0; // Reset aging counter when priority is manually changed
 
     // If the process is currently running, yield to reschedule it with new priority
     Process *currentProc = getCurrentProcess();

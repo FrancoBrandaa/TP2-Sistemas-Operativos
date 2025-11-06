@@ -2,6 +2,11 @@
 #define SCHEDULER_H_
 #define YIELD_DONE 1
 #define YIELD_NOT_DONE 0
+
+// Aging configuration
+#define AGING_THRESHOLD 5  // After being skipped this many times, boost priority
+#define MAX_AGING_BOOST 2  // Maximum priority levels to boost
+
 #include "./process.h"
 #include <stdint.h>
 

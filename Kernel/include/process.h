@@ -35,6 +35,7 @@ typedef struct
     int argc;
     char **argv;
     Priority priority;
+    Priority originalPriority; // For aging: original priority before any boost
     int foreground;
     entryPoint entryPoint;//ver
     ProcessState state;
@@ -42,6 +43,7 @@ typedef struct
     int waitReturnValue;
     PID waitPid;
     int fds[2]; // uno de lectura otro de escritura
+    uint64_t agingCounter; // Counts how many times this process was skipped
 } Process;
 
 

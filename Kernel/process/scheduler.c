@@ -49,6 +49,86 @@ Process *unschedule() // Get next process from highest priority queue
     return NULL; // No ready processes
 }
 
+/*
+ * applyAging
+ * ----------
+ * Applies aging mechanism to prevent starvation.
+ * Iterates through all priority queues, increments aging counter for waiting processes,
+ * and boosts priority if a process has been waiting too long.
+ */
+void applyAging()
+{
+    // Iterate through all priority queues
+    for (int queueIndex = 0; queueIndex < MAX_PRIORITY; queueIndex++)
+    {
+        if (isEmpty(priorityQueues[queueIndex]))
+        {
+            continue;
+        }
+
+        // Create temporary queue to store processed elements
+        queueADT tempQueue = newQueue();
+        if (tempQueue == NULL)
+        {
+            continue; // Skip this queue if can't allocate temp queue
+        }
+
+        // Process all elements in current queue
+        while (!isEmpty(priorityQueues[queueIndex]))
+        {
+            Process *pcb = (Process *)dequeue(priorityQueues[queueIndex]);
+            
+            if (pcb == NULL)
+            {
+                break;
+            }
+
+            // Increment aging counter (process is waiting)
+            pcb->agingCounter++;
+
+            // Check if process needs priority boost
+            if (pcb->agingCounter >= AGING_THRESHOLD && pcb->priority < MAX_PRIORITY)
+            {
+                // Calculate boost level
+                int boostLevel = pcb->agingCounter / AGING_THRESHOLD;
+                if (boostLevel > MAX_AGING_BOOST)
+                {
+                    boostLevel = MAX_AGING_BOOST;
+                }
+
+                // Calculate new boosted priority
+                Priority boostedPriority = pcb->originalPriority + boostLevel;
+                
+                // Cap at MAX_PRIORITY
+                if (boostedPriority > MAX_PRIORITY)
+                {
+                    boostedPriority = MAX_PRIORITY;
+                }
+
+                // Update priority
+                pcb->priority = boostedPriority;
+            }
+
+            // Store in temp queue
+            queue(tempQueue, (type)pcb);
+        }
+
+        // Re-queue all processes to their appropriate priority queues
+        while (!isEmpty(tempQueue))
+        {
+            Process *pcb = (Process *)dequeue(tempQueue);
+            if (pcb != NULL)
+            {
+                int newQueueIndex = pcb->priority - 1;
+                queue(priorityQueues[newQueueIndex], (type)pcb);
+            }
+        }
+
+        // Free temporary queue
+        freeQueue(tempQueue);
+    }
+}
+
 uint64_t *switchContext(uint64_t *rsp)
 {
     if (currentProcess == NULL)
@@ -61,6 +141,7 @@ uint64_t *switchContext(uint64_t *rsp)
         }
         quantumsLeft = currentProcess->priority - 1;
         currentProcess->state = RUNNING;
+        currentProcess->agingCounter = 0; // Reset aging when process starts running
 
         return currentProcess->stackEnd;
     }
@@ -77,6 +158,13 @@ uint64_t *switchContext(uint64_t *rsp)
         // Process exhausted quantum or yielded
         currentProcess->stackEnd = rsp;
         currentProcess->state = READY;
+        
+        // Restore original priority before rescheduling
+        if (currentProcess->priority != currentProcess->originalPriority)
+        {
+            currentProcess->priority = currentProcess->originalPriority;
+        }
+        
         schedule(currentProcess); // Put back in its priority queue
     }
     else if (currentProcess->state == BLOCKED || currentProcess->state == EXITED)
@@ -85,6 +173,9 @@ uint64_t *switchContext(uint64_t *rsp)
         quantumsLeft = 0;
         currentProcess->stackEnd = rsp;
     }
+
+    // Apply aging to all processes in lower priority queues
+    applyAging();
 
     // Get next process from highest priority queue
     do
@@ -101,6 +192,8 @@ uint64_t *switchContext(uint64_t *rsp)
     clearYield();
     quantumsLeft = currentProcess->priority - 1;
     currentProcess->state = RUNNING;
+    currentProcess->agingCounter = 0; // Reset aging counter when process runs
+    
     return currentProcess->stackEnd;
 }
 
