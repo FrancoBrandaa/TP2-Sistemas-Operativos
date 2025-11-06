@@ -81,7 +81,7 @@ int loop_wrapper(int argc, char **argv)
         sleep(seconds * 1000); // Convert seconds to milliseconds
     }
 
-    // This line is never reached, but included for completeness
+    // no deberia llegar aca creo
     return 0;
 }
 
@@ -102,7 +102,7 @@ int loop_ps_wrapper(int argc, char **argv)
     int64_t my_pid = getpid();
     const char *stateNames[] = {"READY", "RUNNING", "BLOCKED", "EXITED"};
 
-    printf("\e[1;33m[Process %d] Monitoring shell state. Press any key to see shell unblock.\e[0m\n\n", my_pid);
+    printf("\e[1;33m[Process %d] Monitoring shell state.\e[0m\n\n", my_pid);
 
     for (int iteration = 0; iteration < 20; iteration++) // 20 segundos de monitoreo
     {
@@ -110,8 +110,6 @@ int loop_ps_wrapper(int argc, char **argv)
 
         if (processes != NULL)
         {
-            printf("\e[1;36m--- Iteration %d ---\e[0m\n", iteration + 1);
-
             // Buscar y mostrar solo el proceso de la shell (PID 2)
             for (int i = 0; processes[i].pid != NONPID; i++)
             {

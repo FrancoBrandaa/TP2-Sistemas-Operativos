@@ -72,6 +72,44 @@ uint32_t isEmpty(queueADT q)
     return (q->first == NULL);
 }
 
+// Remove a specific element from the queue (search and remove)
+int removeFromQueue(queueADT q, type element)
+{
+    if (q == NULL || q->first == NULL)
+        return 0; // Queue is empty or invalid
+
+    queueType current = q->first;
+    queueType prev = NULL;
+
+    // Search for the element
+    while (current != NULL)
+    {
+        if (current->data == element)
+        {
+            // Found it - remove from list
+            if (prev == NULL)
+            {
+                // Removing first element
+                q->first = current->tail;
+                if (q->first == NULL)
+                    q->last = NULL; // Queue is now empty
+            }
+            else
+            {
+                // Removing middle or last element
+                prev->tail = current->tail;
+                if (current == q->last)
+                    q->last = prev; // Was last element
+            }
+            freeMemory(current);
+            return 1; // Successfully removed
+        }
+        prev = current;
+        current = current->tail;
+    }
+    return 0; // Element not found
+}
+
 void freeQueue(queueADT q)
 {
     while (!isEmpty(q))

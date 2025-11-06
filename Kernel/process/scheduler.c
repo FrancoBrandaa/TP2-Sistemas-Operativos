@@ -148,6 +148,19 @@ char getYield()
     return isYield;
 }
 
+// Remove a process from all priority queues
+void unscheduleProcess(Process *pcb)
+{
+    if (pcb == NULL)
+        return;
+
+    // Search and remove from all priority queues
+    for (int i = 0; i < MAX_PRIORITY; i++)
+    {
+        removeFromQueue(priorityQueues[i], (type)pcb);
+    }
+}
+
 int yield()
 {
     setYield();

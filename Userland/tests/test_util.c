@@ -3,6 +3,14 @@
 #include "libsys.h"
 #include "test_util.h"
 
+// Default values for test commands
+#define DEFAULT_TEST_MM_MEMORY "1024"   // 1 KB
+#define DEFAULT_TEST_PRIO_VALUE "1000000000" // 1000000000 iterations
+#define DEFAULT_TEST_PROCESSES_MAX "5"  // 5 processes
+
+#define DEFAULT_TEST_SYNC_ITERS "1000" // 1000 iterations
+#define DEFAULT_TEST_SYNC_USE_SEM "1"  // Use semaphore by default
+
 // Random
 static uint32_t m_z = 362436069;
 static uint32_t m_w = 521288629;
@@ -73,62 +81,13 @@ void endless_loop()
     ;
 }
 
-void endless_loop_print(uint64_t wait)
-{
-  int64_t pid = getpid();
-  printf("endless_loop_print: %d\n", pid);
-  while (1)
-  {
-    printf("%d ", pid);
-    bussy_wait(wait);
-  }
-}
-
-// Wrappers for test_prio ----------------------
-long my_getpid()
-{
-  return getpid();
-}
-
-long my_create_process(char *name, uint32_t priority, char **argv)
-{
-  extern int zero_to_max_wrapper(int argc, char **argv);
-  // Use default priority (1) if priority is 0, otherwise use the provided priority
-  int actual_priority = (priority == 0) ? 1 : priority;
-  return createProcess(name, zero_to_max_wrapper, 0, argv, actual_priority, 1);
-}
-
-int32_t my_nice(long pid, int32_t priority)
-{
-  return nice(pid, priority);
-}
-
-int32_t my_kill(int32_t pid)
-{
-  return kill(pid);
-}
-
-int32_t my_block(long pid)
-{
-  return block(pid);
-}
-
-int32_t my_unblock(long pid)
-{
-  return unblock(pid);
-}
-
-int32_t my_wait(long pid)
-{
-  return wait(pid, NULL);
-}
-
 // Global variable for test_prio
 uint64_t max_value = 0;
 
 void zero_to_max()
 {
   uint64_t value = 0;
+  printf("PROCESS %d STARTED! (counting to %d)\n", getpid(), max_value);
   while (value++ != max_value)
     ;
   printf("PROCESS %d DONE!\n", getpid());
@@ -138,4 +97,142 @@ int zero_to_max_wrapper(int argc, char **argv)
 {
   zero_to_max();
   return 0;
+}
+
+// Wrapper for endless_loop
+int endless_loop_wrapper(int argc, char **argv)
+{
+  endless_loop();
+  return 0;
+}
+
+// Wrapper for test_mm
+int test_mm_wrapper(int argc, char **argv)
+{
+  extern uint64_t test_mm(uint64_t argc, char *argv[]);
+
+  char *test_argv[1];
+
+  if (argc < 2)
+  {
+    // No arguments, use default
+    test_argv[0] = DEFAULT_TEST_MM_MEMORY;
+    printf("test_mm: Using default max_memory = %s bytes\n", DEFAULT_TEST_MM_MEMORY);
+    return (int)test_mm(1, test_argv);
+  }
+
+  // Skip command name: argv[0] is "test_mm", so pass &argv[1]
+  return (int)test_mm((uint64_t)(argc - 1), &argv[1]);
+}
+
+// Wrapper for test_prio
+int test_prio_wrapper(int argc, char **argv)
+{
+  extern uint64_t test_prio(uint64_t argc, char *argv[]);
+
+  char *test_argv[1];
+
+  if (argc < 2)
+  {
+    // No arguments, use default
+    test_argv[0] = DEFAULT_TEST_PRIO_VALUE;
+    printf("test_prio: Using default max_value = %s\n", DEFAULT_TEST_PRIO_VALUE);
+    return (int)test_prio(1, test_argv);
+  }
+
+  return (int)test_prio((uint64_t)(argc - 1), &argv[1]);
+}
+
+// Wrapper for test_sync
+int test_sync_wrapper(int argc, char **argv)
+{
+  extern uint64_t test_sync(uint64_t argc, char *argv[]);
+
+  char *default_args[2];
+
+  if (argc < 3)
+  {
+    // Not enough arguments, use defaults
+    default_args[0] = DEFAULT_TEST_SYNC_ITERS;
+    default_args[1] = DEFAULT_TEST_SYNC_USE_SEM;
+    printf("test_sync: Using defaults: iterations=%s, use_semaphore=%s\n",
+           DEFAULT_TEST_SYNC_ITERS, DEFAULT_TEST_SYNC_USE_SEM);
+    return (int)test_sync(2, default_args);
+  }
+
+  return (int)test_sync((uint64_t)(argc - 1), &argv[1]);
+}
+
+// Wrapper for test_synchro (with semaphore)
+int test_synchro_wrapper(int argc, char **argv)
+{
+  extern uint64_t test_sync(uint64_t argc, char *argv[]);
+
+  char *default_args[2];
+
+  if (argc < 2)
+  {
+    // No iterations argument provided, use default
+    default_args[0] = DEFAULT_TEST_SYNC_ITERS;
+    default_args[1] = "1"; // Always use semaphore
+    printf("test_synchro: Using defaults: iterations=%s, use_semaphore=1\n",
+           DEFAULT_TEST_SYNC_ITERS);
+    return (int)test_sync(2, default_args);
+  }
+
+  // User provided iterations, use it but force semaphore to 1
+  char *sync_args[2];
+  sync_args[0] = argv[1]; // User's iteration count
+  sync_args[1] = "1";     // Force semaphore on
+  return (int)test_sync(2, sync_args);
+}
+
+// Wrapper for test_no_synchro (without semaphore)
+int test_no_synchro_wrapper(int argc, char **argv)
+{
+  extern uint64_t test_sync(uint64_t argc, char *argv[]);
+
+  char *default_args[2];
+
+  if (argc < 2)
+  {
+    // No iterations argument provided, use default
+    default_args[0] = DEFAULT_TEST_SYNC_ITERS;
+    default_args[1] = "0"; // Never use semaphore
+    printf("test_no_synchro: Using defaults: iterations=%s, use_semaphore=0\n",
+           DEFAULT_TEST_SYNC_ITERS);
+    return (int)test_sync(2, default_args);
+  }
+
+  // User provided iterations, use it but force semaphore to 0
+  char *sync_args[2];
+  sync_args[0] = argv[1]; // User's iteration count
+  sync_args[1] = "0";     // Force semaphore off
+  return (int)test_sync(2, sync_args);
+}
+
+// Wrapper for test_processes
+int test_processes_wrapper(int argc, char **argv)
+{
+  extern int64_t test_processes(uint64_t argc, char *argv[]);
+
+  char *test_argv[1];
+
+  if (argc < 2)
+  {
+    // No arguments, use default
+    test_argv[0] = DEFAULT_TEST_PROCESSES_MAX;
+    printf("test_processes: Using default max_processes = %s\n", DEFAULT_TEST_PROCESSES_MAX);
+    return (int)test_processes(1, test_argv);
+  }
+
+  return (int)test_processes((uint64_t)(argc - 1), &argv[1]);
+}
+
+// Wrapper for process_inc (used in test_sync)
+int process_inc_wrapper(int argc, char **argv)
+{
+  extern uint64_t process_inc(uint64_t argc, char *argv[]);
+  // This one is called from test_sync with correct args already, no adjustment needed
+  return (int)process_inc((uint64_t)argc, argv);
 }
