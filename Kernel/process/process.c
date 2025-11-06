@@ -137,7 +137,7 @@ PID createProcess(creationParameters *params)
         return -1;
 
     void *stackLimit = allocMemory(STACK_SIZE);
-    char **args;
+    char **args = NULL; // ensure NULL when argc == 0
     if (stackLimit == NULL || (params->argc != 0 && (args = allocMemory(params->argc * sizeof(char *))) == NULL))
     {
         freeMemory(stackLimit);
@@ -377,6 +377,10 @@ int kill(PID pid)
     {
         return -1;
     }
+
+    // Remove from scheduler queues BEFORE freeing memory
+    extern void unscheduleProcess(Process * pcb);
+    unscheduleProcess(pcb);
 
     freeMemory(((void *)pcb->stackBase - STACK_SIZE));
     if (pcb->argc > 0)

@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include "../include/memoryManager.h"
 
-typedef void * type; //long antes
-typedef struct queueCDT * queueADT;
+typedef void *type; // long antes
+typedef struct queueCDT *queueADT;
 
 /*
  * Creates a new queue.
@@ -36,6 +36,15 @@ type dequeue(queueADT q);
  * Returns 1 if the queue is empty, or 0 otherwise.
  */
 uint32_t isEmpty(queueADT q);
+
+/*
+ * Removes a specific element from the queue.
+ * Parameters:
+ *   q - Pointer to the queue.
+ *   element - The element to remove.
+ * Returns 1 if found and removed, 0 otherwise.
+ */
+int removeFromQueue(queueADT q, type element);
 
 /*
  * Frees the memory allocated for the queue.

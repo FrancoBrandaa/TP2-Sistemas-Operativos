@@ -113,12 +113,6 @@ Command commands[] = {
      .type = CMD_BUILTIN,
      .handler.builtin = nice_cmd},
 
-    {.name = "test",
-     .description = "Runs system tests",
-     .usage = "test [test_name]",
-     .type = CMD_BUILTIN,
-     .handler.builtin = test_cmd},
-
     {.name = "counter",
      .description = "Counts from 1 to N and exits",
      .usage = "counter [max_count]",
@@ -154,6 +148,36 @@ Command commands[] = {
      .usage = "wc (type anything and use Ctrl+D to end)",
      .type = CMD_PROCESS,
      .handler.process = {.entrypoint = wc_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
+
+    {.name = "test_mm",
+     .description = "Memory manager stress test",
+     .usage = "test_mm <max_memory_bytes>",
+     .type = CMD_PROCESS,
+     .handler.process = {.entrypoint = test_mm_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
+
+    {.name = "test_processes",
+     .description = "Process creation and management test",
+     .usage = "test_processes <max_processes>",
+     .type = CMD_PROCESS,
+     .handler.process = {.entrypoint = test_processes_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
+
+    {.name = "test_prio",
+     .description = "Process priority test",
+     .usage = "test_prio <max_value>",
+     .type = CMD_PROCESS,
+     .handler.process = {.entrypoint = test_prio_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
+
+    {.name = "test_synchro",
+     .description = "Synchronization test WITH semaphore",
+     .usage = "test_synchro [iterations]",
+     .type = CMD_PROCESS,
+     .handler.process = {.entrypoint = test_synchro_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
+
+    {.name = "test_no_synchro",
+     .description = "Synchronization test WITHOUT semaphore",
+     .usage = "test_no_synchro [iterations]",
+     .type = CMD_PROCESS,
+     .handler.process = {.entrypoint = test_no_synchro_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
 };
 
 Command *find_command(const char *name)
@@ -877,7 +901,6 @@ int block_cmd(int argc, char **argv)
         return 1;
     }
 
-
     // Get current process list to check state
     Process *processes = getProcessList();
     if (processes == NULL)
@@ -973,29 +996,6 @@ int nice_cmd(int argc, char **argv)
         printf("Error: Could not change priority of process %d\n", pid);
         return -1;
     }
-
-    return 0;
-}
-
-int test_cmd(int argc, char **argv)
-{
-    if (argc < 2)
-    {
-        printf("Available tests:\n");
-        printf("  mm         - Memory manager test\n");
-        printf("  prio       - Process priority test\n");
-        printf("  processes  - Process creation test (original)\n");
-        printf("  myproc     - Process creation test (improved)\n");
-        printf("  sync       - Synchronization test\n");
-        printf("  memstatus  - Memory status test\n");
-        printf("\nUsage: test <test_name>\n");
-        return 0;
-    }
-
-    const char *test_name = argv[1];
-
-    // TODO: Implement test execution
-    printf("Test '%s' - Not implemented yet :(\nlo hacemos a lo ultimo esto\n", test_name);
 
     return 0;
 }

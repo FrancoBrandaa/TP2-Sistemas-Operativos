@@ -41,6 +41,7 @@ typedef struct Block
 static Block *firstBlock = NULL;    // Puntero al primer bloque de la lista enlazada
 static uint32_t memoryPoolSize = 0; // Tamaño total del pool de memoria gestionado
 
+
 // Macros auxiliares para cálculos y conversiones
 #define BLOCK_HEADER_SIZE ((uint32_t)ALIGN(sizeof(Block))) // Tamaño alineado del header
 #define TO_BYTE_PTR(ptr) ((uint8_t *)(ptr))                // Convierte puntero a bytes
@@ -140,7 +141,9 @@ void *allocMemory(uint32_t size)
     if (hasRoomForSplit(block, alignedSize))
         splitBlock(block, alignedSize);
 
-    block->free = 0;                               // Marca el bloque como ocupado
+    block->free = 0; // Marca el bloque como ocupado
+
+
     return TO_BYTE_PTR(block) + BLOCK_HEADER_SIZE; // Retorna puntero a los datos (después del header)
 }
 
@@ -198,6 +201,7 @@ void freeMemory(void *memorySegment)
     Block *block = (Block *)(TO_BYTE_PTR(memorySegment) - BLOCK_HEADER_SIZE);
     if (block->free)
         return;
+
 
     block->free = 1;
     coalesce(block);

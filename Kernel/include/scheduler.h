@@ -29,6 +29,13 @@ void schedule(Process *pcb);
 Process *unschedule();
 
 /*
+ * Removes a specific process from all scheduler queues.
+ * Parameters:
+ *   pcb - Pointer to the process control block to remove.
+ */
+void unscheduleProcess(Process *pcb);
+
+/*
  * Switches the CPU context to the next process.
  * Parameters:
  *   rsp - Pointer to the current stack pointer.

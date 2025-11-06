@@ -4,12 +4,12 @@
 #include <stdint.h>
 #include "defs.h"
 
-#define ALIGNMENT      8u
-#define ALIGN(sz)      (((sz) + (ALIGNMENT-1)) & ~(ALIGNMENT-1))
-//lo que hace es (EJEMPLO DEMOSTRATIVO):
+#define ALIGNMENT 8u
+#define ALIGN(sz) (((sz) + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1))
+// lo que hace es (EJEMPLO DEMOSTRATIVO):
 /*
 ALIGN(1)  = 8   // 1 → 8 bytes
-ALIGN(5)  = 8   // 5 → 8 bytes  
+ALIGN(5)  = 8   // 5 → 8 bytes
 ALIGN(8)  = 8   // 8 → 8 bytes (ya alineado)
 ALIGN(9)  = 16  // 9 → 16 bytes
 ALIGN(13) = 16  // 13 → 16 bytes
@@ -45,5 +45,7 @@ void freeMemory(void *memorySegment);
  * status - Pointer to a MemoryStatus structure to store the status information.
  */
 void getMemoryStatus(MemoryStatus *status);
+
+// Debug helpers removed for clean build
 
 #endif

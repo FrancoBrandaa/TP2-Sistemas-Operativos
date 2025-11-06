@@ -31,7 +31,7 @@ static void *const shellModuleAddress = (void *)0x400000;
 
 // HEAP
 static void *const memoryStart = (void *)0xF00000;
-const int memorySize = (1 << 20); // 1GB
+const int memorySize = (1 << 22); // 4 MB (was 1 MB)
 
 typedef int (*EntryPoint)();
 

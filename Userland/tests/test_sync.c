@@ -15,7 +15,7 @@ void slowInc(int64_t *p, int64_t inc)
   aux += inc; // tiene capturado el sem no pasa nada
   *p = aux;
 }
-uint64_t my_process_inc(uint64_t argc, char *argv[])
+uint64_t process_inc(uint64_t argc, char *argv[])
 {
   uint64_t n;
   int8_t inc;
@@ -73,11 +73,6 @@ uint64_t my_process_inc(uint64_t argc, char *argv[])
   return 0;
 }
 
-int my_process_inc_wrapper(int argc, char *argv[])
-{
-  return (int)my_process_inc(argc, argv);
-}
-
 uint64_t test_sync(uint64_t argc, char *argv[])
 { //{n, use_sem, 0}
   uint64_t pids[2 * TOTAL_PAIR_PROCESSES];
@@ -93,12 +88,12 @@ uint64_t test_sync(uint64_t argc, char *argv[])
   uint64_t i;
   for (i = 0; i < TOTAL_PAIR_PROCESSES; i++)
   {
-    int fds[2] = {0, 1}; // STDIN, STDOUT
     // Crear procesos decrementadores
-    pids[i] = createProcess("my_process_inc", my_process_inc_wrapper, 3, argvDec, 5, 0, fds);
+    extern int process_inc_wrapper(int argc, char **argv);
+    pids[i] = createProcess("process_inc", process_inc_wrapper, 3, argvDec, 5, 0);
     printf("Created decrementing process with PID %d\n", pids[i]);
     // Crear procesos incrementadores
-    pids[i + TOTAL_PAIR_PROCESSES] = createProcess("my_process_inc", my_process_inc_wrapper, 3, argvInc, 5, 0, fds);
+    pids[i + TOTAL_PAIR_PROCESSES] = createProcess("process_inc", process_inc_wrapper, 3, argvInc, 5, 0);
     printf("Created incrementing process with PID %d\n", pids[i + TOTAL_PAIR_PROCESSES]);
   } // crea cuatro procesos, dos que incrementan y dos que decrementan
 
