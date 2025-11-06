@@ -32,7 +32,7 @@ int64_t test_processes(uint64_t argc, char *argv[])
     return -1;
 
   p_rq p_rqs[max_processes];
-  int iteration = 0;
+  //int iteration = 0; no se esta usando
 
   int default_fds[2] = {0, 1}; // stdin, stdout
   while (1)
