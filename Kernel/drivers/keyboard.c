@@ -175,11 +175,15 @@ void clearKeyFnMapNonKernel(SpecialKeyHandler *map)
 
 uint8_t registerSpecialKey(enum KEYS scancode, SpecialKeyHandler fn, uint8_t registeredFromKernel)
 {
-    if (IS_KEYCODE(scancode) && ((registeredFromKernel != 0 || (registeredFromKernel == 0 && KeyFnMap[scancode].fn == NULL))))
+    if (IS_KEYCODE(scancode))
     {
-        KeyFnMap[scancode].fn = fn;
-        KeyFnMap[scancode].registered_from_kernel = registeredFromKernel;
-        return 1;
+        uint8_t index = scancode - ESCAPE_KEY;
+        if ((registeredFromKernel != 0 || (registeredFromKernel == 0 && KeyFnMap[index].fn == NULL)))
+        {
+            KeyFnMap[index].fn = fn;
+            KeyFnMap[index].registered_from_kernel = registeredFromKernel;
+            return 1;
+        }
     }
 
     return 0;
@@ -405,9 +409,13 @@ uint8_t keyboardHandler()
     }
 
     // Call the registered function for the key, if any
-    if (KeyFnMap[scancode].fn != 0)
+    if (IS_KEYCODE(scancode))
     {
-        KeyFnMap[scancode].fn(scancode);
+        uint8_t index = scancode - ESCAPE_KEY;
+        if (KeyFnMap[index].fn != 0)
+        {
+            KeyFnMap[index].fn(scancode);
+        }
     }
 
     return scancode;
