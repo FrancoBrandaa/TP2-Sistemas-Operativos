@@ -61,7 +61,10 @@ void strncpy(char *dest, char *src, int n)
         dest[i] = src[i];
         i++;
     }
-    dest[i] = 0;
+    if (i < n)
+    {
+        dest[i] = 0;
+    }
 }
 
 // Divide el string s1 en tokens, usando los caracteres en s2 como delimitadores.

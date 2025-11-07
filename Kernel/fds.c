@@ -57,9 +57,9 @@ int readFromFD(int fd, char *buf, int count) {
     // Manejo especial para STDIN - leer directamente del teclado
     if (fd == STDIN) {
         int i;
-        int8_t c;
+        int c;
         for (i = 0; i < count && (c = getKeyboardCharacter(AWAIT_RETURN_KEY | SHOW_BUFFER_WHILE_TYPING)) != EOF; i++) {
-            buf[i] = c;
+            buf[i] = (char)c;
         }
         return i;
     }

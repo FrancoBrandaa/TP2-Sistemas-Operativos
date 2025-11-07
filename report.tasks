@@ -1,0 +1,26 @@
+pvs-studio.com/en/docs/warnings/	1	err	Help: The documentation for all analyzer warnings is available here: https://pvs-studio.com/en/docs/warnings/.
+/home/mgarciapuente/TP2-Sistemas-Operativos/Bootloader/BMFS/bmfs.c	552	err	V595 The 'disk' pointer was utilized before it was verified against nullptr. Check lines: 552, 575.
+/home/mgarciapuente/TP2-Sistemas-Operativos/Bootloader/BMFS/bmfs.c	638	warn	V1032 The pointer 'dir_copy' is cast to a more strictly aligned pointer type.
+/home/mgarciapuente/TP2-Sistemas-Operativos/Bootloader/BMFS/bmfs.c	694	warn	V1032 The pointer 'Directory' is cast to a more strictly aligned pointer type.
+/home/mgarciapuente/TP2-Sistemas-Operativos/Kernel/drivers/keyboard.c	178	warn	V557 Array overrun is possible. The value of 'scancode' index could reach 88.
+/home/mgarciapuente/TP2-Sistemas-Operativos/Kernel/drivers/keyboard.c	180	warn	V557 Array overrun is possible. The value of 'scancode' index could reach 88.
+/home/mgarciapuente/TP2-Sistemas-Operativos/Kernel/drivers/keyboard.c	181	warn	V557 Array overrun is possible. The value of 'scancode' index could reach 88.
+/home/mgarciapuente/TP2-Sistemas-Operativos/Kernel/drivers/keyboard.c	408	warn	V557 Array overrun is possible. The value of 'scancode' index could reach 88.
+/home/mgarciapuente/TP2-Sistemas-Operativos/Kernel/drivers/keyboard.c	410	warn	V557 Array overrun is possible. The value of 'scancode' index could reach 88.
+/home/mgarciapuente/TP2-Sistemas-Operativos/Kernel/drivers/keyboard.c	178	warn	V728 An excessive check can be simplified. The '||' operator is surrounded by opposite expressions 'registeredFromKernel != 0' and 'registeredFromKernel == 0'. 
+/home/mgarciapuente/TP2-Sistemas-Operativos/Kernel/drivers/keyboard.c	348	warn	V779 Unreachable code detected. It is possible that an error is present.
+/home/mgarciapuente/TP2-Sistemas-Operativos/Kernel/fds.c	89	warn	V560 A part of conditional expression is always true: fd != 0.
+/home/mgarciapuente/TP2-Sistemas-Operativos/Kernel/fonts.c	116	warn	V547 Expression 'ascii < 128' is always true. The value range of char type: [-128, 127].
+/home/mgarciapuente/TP2-Sistemas-Operativos/Kernel/fonts.c	81	warn	V1009 Check the array initialization. Only the first element is initialized explicitly. The rest elements are initialized with zeros.
+/home/mgarciapuente/TP2-Sistemas-Operativos/Userland/libc/stdio.c	19	warn	V618 It's dangerous to call the 'printf' function in such a manner, as the line being passed could contain format specification. The example of the safe code: printf("%s", str);
+/home/mgarciapuente/TP2-Sistemas-Operativos/Userland/libc/stdio.c	96	warn	V618 It's dangerous to call the 'fprintf' function in such a manner, as the line being passed could contain format specification. The example of the safe code: printf("%s", str);
+/home/mgarciapuente/TP2-Sistemas-Operativos/Userland/libc/stdio.c	106	warn	V618 It's dangerous to call the 'fprintf' function in such a manner, as the line being passed could contain format specification. The example of the safe code: printf("%s", str);
+/home/mgarciapuente/TP2-Sistemas-Operativos/Userland/libc/stdio.c	138	warn	V618 It's dangerous to call the 'fprintf' function in such a manner, as the line being passed could contain format specification. The example of the safe code: printf("%s", str);
+/home/mgarciapuente/TP2-Sistemas-Operativos/Userland/libc/stdio.c	148	warn	V618 It's dangerous to call the 'fprintf' function in such a manner, as the line being passed could contain format specification. The example of the safe code: printf("%s", str);
+/home/mgarciapuente/TP2-Sistemas-Operativos/Userland/libc/stdio.c	169	warn	V618 It's dangerous to call the 'fprintf' function in such a manner, as the line being passed could contain format specification. The example of the safe code: printf("%s", str);
+/home/mgarciapuente/TP2-Sistemas-Operativos/Userland/libc/stdio.c	179	warn	V618 It's dangerous to call the 'fprintf' function in such a manner, as the line being passed could contain format specification. The example of the safe code: printf("%s", str);
+/home/mgarciapuente/TP2-Sistemas-Operativos/Userland/libc/stdio.c	211	warn	V618 It's dangerous to call the 'fprintf' function in such a manner, as the line being passed could contain format specification. The example of the safe code: printf("%s", str);
+/home/mgarciapuente/TP2-Sistemas-Operativos/Userland/libc/stdio.c	221	warn	V618 It's dangerous to call the 'fprintf' function in such a manner, as the line being passed could contain format specification. The example of the safe code: printf("%s", str);
+/home/mgarciapuente/TP2-Sistemas-Operativos/Userland/libc/stdio.c	400	warn	V618 It's dangerous to call the 'fprintf' function in such a manner, as the line being passed could contain format specification. The example of the safe code: printf("%s", str);
+/home/mgarciapuente/TP2-Sistemas-Operativos/Userland/libc/stdio.c	465	warn	V618 It's dangerous to call the 'fprintf' function in such a manner, as the line being passed could contain format specification. The example of the safe code: printf("%s", str);
+/home/mgarciapuente/TP2-Sistemas-Operativos/Userland/libc/string.c	59	err	V781 The value of the 'i' index is checked after it was used. Perhaps there is a mistake in program logic.
