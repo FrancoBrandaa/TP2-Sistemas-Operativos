@@ -85,6 +85,13 @@ void applyAging()
                 break;
             }
 
+            // Skip aging for init (PID 1) and shell (PID 2)
+            if (pcb->pid == 1 || pcb->pid == 2)
+            {
+                queue(tempQueue, (type)pcb);
+                continue;
+            }
+
             // Increment aging counter (process is waiting)
             pcb->agingCounter++;
 

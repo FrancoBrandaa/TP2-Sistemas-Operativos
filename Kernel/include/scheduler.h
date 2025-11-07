@@ -4,7 +4,7 @@
 #define YIELD_NOT_DONE 0
 
 // Aging configuration
-#define AGING_THRESHOLD 5  // After being skipped this many times, boost priority
+#define AGING_THRESHOLD 15  // After being skipped this many times, boost priority
 #define MAX_AGING_BOOST 2  // Maximum priority levels to boost
 
 #include "./process.h"
