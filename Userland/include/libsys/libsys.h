@@ -152,7 +152,6 @@ int32_t semOpen(const char *name, int value);
 int32_t semClose(int semId);
 void semWait(int semId);
 void semPost(int semId);
-int32_t semValue(int semId);
 void semDestroy(int semId);
 
 // File descriptor management wrappers (provided by libsys)

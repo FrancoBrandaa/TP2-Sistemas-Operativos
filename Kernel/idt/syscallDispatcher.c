@@ -122,8 +122,6 @@ int32_t syscallDispatcher(Registers *registers)
 	case 0x80000303:
 		sys_sem_post(registers->rdi);
 		return 0;
-	case 0x80000304:
-		return sys_sem_value(registers->rdi);
 	case 0x80000305:
 		sys_sem_destroy(registers->rdi);
 		return 0;
@@ -480,11 +478,6 @@ void sys_sem_post(int semId)
 	}
 
 	semPost(semId);
-}
-
-int32_t sys_sem_value(int semId)
-{
-	return semValue(semId);
 }
 
 void sys_sem_destroy(int semId)

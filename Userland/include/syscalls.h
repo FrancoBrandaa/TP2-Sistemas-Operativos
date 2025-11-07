@@ -94,8 +94,6 @@ int32_t sys_sem_close(int semId);
 void sys_sem_wait(int semId);
 /* 0x80000303 */
 void sys_sem_post(int semId);
-/* 0x80000304 */
-int32_t sys_sem_value(int semId);
 /* 0x80000305 */
 void sys_sem_destroy(int semId);
 

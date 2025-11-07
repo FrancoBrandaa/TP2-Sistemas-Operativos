@@ -198,11 +198,6 @@ void semPost(int semId)
     sys_sem_post(semId);
 }
 
-int32_t semValue(int semId)
-{
-    return sys_sem_value(semId);
-}
-
 void semDestroy(int semId)
 {
     sys_sem_destroy(semId);

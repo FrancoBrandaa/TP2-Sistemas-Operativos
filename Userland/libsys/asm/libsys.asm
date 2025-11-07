@@ -47,7 +47,6 @@ GLOBAL sys_sem_open
 GLOBAL sys_sem_close
 GLOBAL sys_sem_wait
 GLOBAL sys_sem_post
-GLOBAL sys_sem_value
 GLOBAL sys_sem_destroy
 
 GLOBAL sys_pipe
@@ -126,7 +125,6 @@ sys_sem_open: sys_int80 0x80000300
 sys_sem_close: sys_int80 0x80000301
 sys_sem_wait: sys_int80 0x80000302
 sys_sem_post: sys_int80 0x80000303
-sys_sem_value: sys_int80 0x80000304
 sys_sem_destroy: sys_int80 0x80000305
 
 ; syscalls de file descriptors

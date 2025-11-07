@@ -91,7 +91,6 @@ int32_t sys_sem_open(const char *name, int value);
 int32_t sys_sem_close(int semId);
 void sys_sem_wait(int semId);
 void sys_sem_post(int semId);
-int32_t sys_sem_value(int semId);
 void sys_sem_destroy(int semId);
 
 // File descriptor syscall prototypes
