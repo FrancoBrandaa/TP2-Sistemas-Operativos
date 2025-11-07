@@ -2,6 +2,7 @@
 #define SCHEDULER_H_
 #define YIELD_DONE 1
 #define YIELD_NOT_DONE 0
+#define DEFAULT_QUANTUM 3
 
 // Aging configuration
 #define AGING_THRESHOLD 15  // After being skipped this many times, boost priority

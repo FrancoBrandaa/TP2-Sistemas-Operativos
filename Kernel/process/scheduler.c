@@ -148,7 +148,7 @@ uint64_t *switchContext(uint64_t *rsp)
         {
             return rsp; // No processes to run
         }
-        quantumsLeft = currentProcess->priority - 1;
+        quantumsLeft = DEFAULT_QUANTUM ; // Quantum fijo para todos los procesos
         currentProcess->state = RUNNING;
         currentProcess->agingCounter = 0; // Reset aging when process starts running
 
