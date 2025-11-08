@@ -8,6 +8,7 @@
 #include "test_util.h"
 
 #define MAX_BLOCKS 128
+#define NUM_ITERATIONS 50000
 
 typedef struct MM_rq
 {
@@ -18,7 +19,7 @@ typedef struct MM_rq
 uint64_t test_mm(uint64_t argc, char *argv[])
 {
 
-  printf("Starting test_mm (im in test_mm right now)\n");
+  //printf("Starting test_mm (im in test_mm right now)\n");
 
   mm_rq mm_rqs[MAX_BLOCKS];
   uint8_t rq;
@@ -73,8 +74,8 @@ uint64_t test_mm(uint64_t argc, char *argv[])
       if (mm_rqs[i].address)
         free(mm_rqs[i].address);
 
-    // Imprimo progreso cada 50000 iteraciones, para que halla algo de feedback
-    if (iterations % 50000 == 0)
+    // Imprimo progreso cada NUM_ITERATIONS iteraciones, para que halla algo de feedback
+    if (iterations % NUM_ITERATIONS == 0)
       printf("test_mm: %lu iterations OK\n", iterations);
       
   }
