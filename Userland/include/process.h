@@ -27,7 +27,7 @@ typedef struct
     int argc;
     char **argv;
     Priority priority;
-    Priority originalPriority; // For aging: original priority before any boost
+    Priority originalPriority; // para el aging
     int foreground;
     entryPoint entryPoint;
     ProcessState state;

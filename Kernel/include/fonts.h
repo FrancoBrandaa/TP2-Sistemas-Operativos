@@ -31,10 +31,6 @@ void hideCursor(void);
 void retractPosition();
 void clearPreviousCharacter(void);
 uint16_t getXBufferPosition(void);
-// Note: fonts.c provides its own internal static strlen implementation.
-// Do NOT declare 'strlen' here to avoid conflicts with the standard library's
-// strlen (which returns size_t). The internal implementation in fonts.c is
-// static and local to that translation unit.
 
 uint8_t increaseFontSize(void);
 uint8_t decreaseFontSize(void);
