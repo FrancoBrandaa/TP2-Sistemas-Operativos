@@ -30,7 +30,8 @@ typedef struct
         {
             int (*entrypoint)(int argc, char **argv); /**< Process entry point */
             int priority;                             /**< Process priority (higher = more CPU time) */
-            int is_background;                        /**< 1 = background, 0 = foreground */
+            int is_background;                        /**< 1 = background by default, 0 = foreground by default */
+            int allow_background;                     /**< 1 = user can use '&' to run in background, 0 = always foreground */
         } process;
     } handler;
 } Command;

@@ -106,73 +106,73 @@ Command commands[] = {
      .description = "Counts from 1 to N and exits",
      .usage = "counter [max_count]",
      .type = CMD_PROCESS,
-     .handler.process = {.entrypoint = counter_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
+     .handler.process = {.entrypoint = counter_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0, .allow_background = 1}},
 
     {.name = "loop",
      .description = "Prints PID with greeting every N seconds",
      .usage = "loop [seconds]",
      .type = CMD_PROCESS,
-     .handler.process = {.entrypoint = loop_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 1}},
+     .handler.process = {.entrypoint = loop_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 1, .allow_background = 1}},
 
     {.name = "loop_ps",
      .description = "Runs ps in a loop to monitor shell state",
      .usage = "loop_ps",
      .type = CMD_PROCESS,
-     .handler.process = {.entrypoint = loop_ps_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 1}},
+     .handler.process = {.entrypoint = loop_ps_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 1, .allow_background = 1}},
 
     {.name = "filter",
      .description = "Reads from stdin and filters out vowels",
      .usage = "filter  (type anything and use Ctrl+D to end)",
      .type = CMD_PROCESS,
-     .handler.process = {.entrypoint = filter_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
+     .handler.process = {.entrypoint = filter_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0, .allow_background = 0}},
 
     {.name = "cat",
      .description = "Reads from stdin and echoes it back",
      .usage = "cat (type anything and use Ctrl+D to end)",
      .type = CMD_PROCESS,
-     .handler.process = {.entrypoint = cat_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
+     .handler.process = {.entrypoint = cat_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0, .allow_background = 0}},
 
     {.name = "wc",
      .description = "Reads from stdin and counts characters",
      .usage = "wc (type anything and use Ctrl+D to end)",
      .type = CMD_PROCESS,
-     .handler.process = {.entrypoint = wc_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
+     .handler.process = {.entrypoint = wc_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0, .allow_background = 0}},
 
     {.name = "test_mm",
      .description = "Memory manager stress test",
      .usage = "test_mm <max_memory_bytes>",
      .type = CMD_PROCESS,
-     .handler.process = {.entrypoint = test_mm_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
+     .handler.process = {.entrypoint = test_mm_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0, .allow_background = 1}},
 
     {.name = "test_processes",
      .description = "Process creation and management test",
      .usage = "test_processes <max_processes>",
      .type = CMD_PROCESS,
-     .handler.process = {.entrypoint = test_processes_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
+     .handler.process = {.entrypoint = test_processes_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0, .allow_background = 1}},
 
     {.name = "test_prio",
      .description = "Process priority test",
      .usage = "test_prio <max_value>",
      .type = CMD_PROCESS,
-     .handler.process = {.entrypoint = test_prio_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
+     .handler.process = {.entrypoint = test_prio_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0, .allow_background = 1}},
 
     {.name = "test_synchro",
      .description = "Synchronization test WITH semaphore",
      .usage = "test_synchro [iterations]",
      .type = CMD_PROCESS,
-     .handler.process = {.entrypoint = test_synchro_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
+     .handler.process = {.entrypoint = test_synchro_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0, .allow_background = 1}},
 
     {.name = "test_no_synchro",
      .description = "Synchronization test WITHOUT semaphore",
      .usage = "test_no_synchro [iterations]",
      .type = CMD_PROCESS,
-     .handler.process = {.entrypoint = test_no_synchro_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
+     .handler.process = {.entrypoint = test_no_synchro_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0, .allow_background = 1}},
 
     {.name = "mvar",
      .description = "Multiple readers/writers synchronization problem",
      .usage = "mvar <writers> <readers>",
      .type = CMD_PROCESS,
-     .handler.process = {.entrypoint = mvar_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0}},
+     .handler.process = {.entrypoint = mvar_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0, .allow_background = 0}},
 };
 
 Command *find_command(const char *name)
@@ -260,8 +260,15 @@ static int execute_command(Command *cmd, int argc, char **argv, int run_in_backg
 
     else if (cmd->type == CMD_PROCESS)
     {
+        // Check if user is trying to run in background when not allowed
+        if (run_in_background && !cmd->handler.process.allow_background)
+        {
+            fprintf(FD_STDERR, "\e[0;33mWarning: '%s' cannot run in background (requires user input).\nRunning in foreground.\e[0m\n", cmd->name);
+            run_in_background = 0;
+        }
+
         // Determine if process should run in background
-        // User can override with & at the end of the command
+        // User can override with & at the end of the command (if allowed)
         int is_background = run_in_background || cmd->handler.process.is_background;
 
         // Get current process FDs to inherit
