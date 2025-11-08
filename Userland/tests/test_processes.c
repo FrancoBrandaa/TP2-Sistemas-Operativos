@@ -21,6 +21,10 @@ extern int endless_loop_wrapper(int argc, char **argv);
 
 int64_t test_processes(uint64_t argc, char *argv[])
 {
+  int fds[2];
+  getFD(fds);
+  int output_fd = fds[1];
+  
   uint8_t rq;
   uint8_t alive = 0;
   uint8_t action;
@@ -36,7 +40,6 @@ int64_t test_processes(uint64_t argc, char *argv[])
   p_rq p_rqs[max_processes];
   //int iteration = 0; no se esta usando
 
-  int default_fds[2] = {0, 1}; // stdin, stdout
   while (1)
   {
     
@@ -45,11 +48,11 @@ int64_t test_processes(uint64_t argc, char *argv[])
     // Create max_processes processes
     for (rq = 0; rq < max_processes; rq++)
     {
-      p_rqs[rq].pid = createProcess("endless_loop", endless_loop_wrapper, 0, argvAux, 2, 0, default_fds); // Background (0)
+      p_rqs[rq].pid = createProcess("endless_loop", endless_loop_wrapper, 0, argvAux, 2, 0, fds); // Background (0)
 
       if (p_rqs[rq].pid == -1)
       {
-        printf("test_processes: ERROR creating process\n");
+        fprintf(output_fd, "test_processes: ERROR creating process\n");
 
         // Kill all processes created so far before exiting
         for (int i = 0; i < rq; i++)
@@ -87,7 +90,7 @@ int64_t test_processes(uint64_t argc, char *argv[])
             
             if (kill(p_rqs[rq].pid) == -1)
             {
-              printf("test_processes: ERROR killing process PID %d\n", p_rqs[rq].pid);
+              fprintf(output_fd, "test_processes: ERROR killing process PID %d\n", p_rqs[rq].pid);
               return -1;
             }
             //  Wait for the process to free resources
@@ -103,7 +106,7 @@ int64_t test_processes(uint64_t argc, char *argv[])
             
             if (block(p_rqs[rq].pid) == -1)
             {
-              printf("test_processes: ERROR blocking process PID %d\n", p_rqs[rq].pid);
+              fprintf(output_fd, "test_processes: ERROR blocking process PID %d\n", p_rqs[rq].pid);
               return -1;
             }
             
@@ -120,7 +123,7 @@ int64_t test_processes(uint64_t argc, char *argv[])
           
           if (unblock(p_rqs[rq].pid) == -1)
           {
-            printf("test_processes: ERROR unblocking process PID %d\n", p_rqs[rq].pid);
+            fprintf(output_fd, "test_processes: ERROR unblocking process PID %d\n", p_rqs[rq].pid);
             return -1;
           }
           

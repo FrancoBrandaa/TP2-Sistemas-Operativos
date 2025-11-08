@@ -464,3 +464,5 @@ static void printBase(int fd, int num, int base)
     uintToBase(num, buffer, base);
     fprintf(fd, buffer);
 }
+
+

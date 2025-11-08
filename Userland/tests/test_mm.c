@@ -7,6 +7,8 @@
 #include <libsys.h>
 #include "test_util.h"
 
+
+
 #define MAX_BLOCKS 128
 
 typedef struct MM_rq
@@ -17,8 +19,10 @@ typedef struct MM_rq
 
 uint64_t test_mm(uint64_t argc, char *argv[])
 {
-
-  printf("Starting test_mm (im in test_mm right now)\n");
+  int fds[2];
+  getFD(fds); // Obtener los FDs del proceso
+  int output_fd = fds[1]; // FD de stdout
+  fprintf(output_fd, "Starting test_mm (im in test_mm right now)\n");
 
   mm_rq mm_rqs[MAX_BLOCKS];
   uint8_t rq;
@@ -64,7 +68,7 @@ uint64_t test_mm(uint64_t argc, char *argv[])
       if (mm_rqs[i].address)
         if (!memcheck(mm_rqs[i].address, i, mm_rqs[i].size))
         {
-          printf("test_mm ERROR\n");
+          fprintf(output_fd, "test_mm ERROR\n");
           return -1;
         }
 
@@ -74,8 +78,9 @@ uint64_t test_mm(uint64_t argc, char *argv[])
         free(mm_rqs[i].address);
 
     // Imprimo progreso cada 50000 iteraciones, para que halla algo de feedback
-    if (iterations % 50000 == 0)
-      printf("test_mm: %lu iterations OK\n", iterations);
+    if (iterations % 50000 == 0) {
+      fprintf(output_fd, "test_mm: %d iterations OK\n", iterations);
+    }
       
   }
 }

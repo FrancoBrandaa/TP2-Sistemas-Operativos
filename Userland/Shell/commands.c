@@ -66,6 +66,10 @@ int counter_wrapper(int argc, char **argv)
  */
 int loop_wrapper(int argc, char **argv)
 {
+    int fds[2];
+    getFD(fds);
+    int output_fd = fds[1];
+    
     int seconds = 2; // Default: 2 seconds
     int64_t pid = getpid();
 
@@ -76,11 +80,11 @@ int loop_wrapper(int argc, char **argv)
             seconds = 2; // Fallback to default if invalid
     }
 
-    printf("\e[0;35m[Process %d] Starting loop with %d second interval...\e[0m\n", pid, seconds);
+    fprintf(output_fd, "\e[0;35m[Process %d] Starting loop with %d second interval...\e[0m\n", pid, seconds);
 
     while (1)
     {
-        printf("\e[0;35mSoy el proceso %d xd\e[0m\n", pid);
+        fprintf(output_fd, "\e[0;35mSoy el proceso %d xd\e[0m\n", pid);
         sleep(seconds * 1000); // Convert seconds to milliseconds
     }
 
@@ -102,10 +106,14 @@ int loop_ps_wrapper(int argc, char **argv)
     (void)argc;
     (void)argv;
 
+    int fds[2];
+    getFD(fds);
+    int output_fd = fds[1];
+
     int64_t my_pid = getpid();
     const char *stateNames[] = {"READY", "RUNNING", "BLOCKED", "EXITED"};
 
-    printf("\e[1;33m[Process %d] Monitoring shell state.\e[0m\n\n", my_pid);
+    fprintf(output_fd, "\e[1;33m[Process %d] Monitoring shell state.\e[0m\n\n", my_pid);
 
     for (int iteration = 0; iteration < 20; iteration++) // 20 segundos de monitoreo
     {
@@ -139,7 +147,7 @@ int loop_ps_wrapper(int argc, char **argv)
                         break;
                     }
 
-                    printf("Shell (PID %d): %s%s\e[0m\n",
+                    fprintf(output_fd, "Shell (PID %d): %s%s\e[0m\n",
                            processes[i].pid, stateColor, stateName);
                     break;
                 }
@@ -151,7 +159,7 @@ int loop_ps_wrapper(int argc, char **argv)
         bussy_wait(1000000000); // Wait 1 second
     }
 
-    printf("\e[1;32m[Process %d] Monitoring complete.\e[0m\n", my_pid);
+    fprintf(output_fd, "\e[1;32m[Process %d] Monitoring complete.\e[0m\n", my_pid);
     return 0;
 }
 
@@ -427,6 +435,10 @@ int mvar_writer(int argc, char **argv)
  */
 int mvar_reader(int argc, char **argv)
 {
+    int fds[2];
+    getFD(fds);
+    int output_fd = fds[1];
+    
     if (argc < 1 || mvar_shared == NULL)
     {
         return -1;
@@ -461,7 +473,7 @@ int mvar_reader(int argc, char **argv)
         mvar_shared->is_empty = 1;
 
         // Simple output: just print the letter with the color code
-        printf("%s%c\033[0m", color_code, read_value);
+        fprintf(output_fd, "%s%c\033[0m", color_code, read_value);
 
         semPost(mvar_shared->sem_mutex);
 
@@ -485,11 +497,15 @@ int mvar_reader(int argc, char **argv)
  */
 int mvar_wrapper(int argc, char **argv)
 {
+    int fds[2];
+    getFD(fds);
+    int output_fd = fds[1];
+    
     if (argc < 3)
     {
-        printf("Usage: mvar <writers> <readers>\n");
-        printf("  writers: number of writer processes (each gets a letter A, B, C, ...)\n");
-        printf("  readers: number of reader processes (each gets a different color)\n");
+        fprintf(output_fd, "Usage: mvar <writers> <readers>\n");
+        fprintf(output_fd, "  writers: number of writer processes (each gets a letter A, B, C, ...)\n");
+        fprintf(output_fd, "  readers: number of reader processes (each gets a different color)\n");
         return -1;
     }
 
@@ -498,18 +514,18 @@ int mvar_wrapper(int argc, char **argv)
 
     if (writers <= 0 || readers <= 0 || writers > 26)
     {
-        printf("Error: Invalid number of writers or readers\n");
-        printf("Writers must be between 1 and 26, readers must be at least 1\n");
+        fprintf(output_fd, "Error: Invalid number of writers or readers\n");
+        fprintf(output_fd, "Writers must be between 1 and 26, readers must be at least 1\n");
         return -1;
     }
 
-    printf("\e[1;36m=== MVAR: Starting with %d writers and %d readers ===\e[0m\n", writers, readers);
+    fprintf(output_fd, "\e[1;36m=== MVAR: Starting with %d writers and %d readers ===\e[0m\n", writers, readers);
 
     // Allocate shared memory
     mvar_shared = (MvarShared *)malloc(sizeof(MvarShared));
     if (mvar_shared == NULL)
     {
-        printf("Error: Could not allocate shared memory\n");
+        fprintf(output_fd, "Error: Could not allocate shared memory\n");
         return -1;
     }
 
@@ -526,12 +542,10 @@ int mvar_wrapper(int argc, char **argv)
 
     if (mvar_shared->sem_mutex < 0 || mvar_shared->sem_empty < 0 || mvar_shared->sem_full < 0)
     {
-        printf("Error: Could not create semaphores\n");
+        fprintf(output_fd, "Error: Could not create semaphores\n");
         free(mvar_shared);
         return -1;
     }
-
-    int default_fds[2] = {0, 1}; // stdin, stdout
 
     // Create writers
     for (int i = 0; i < writers; i++)
@@ -541,10 +555,10 @@ int mvar_wrapper(int argc, char **argv)
         letter[1] = '\0';
 
         char *writer_argv[] = {letter, NULL};
-        int64_t pid = createProcess("mvar_writer", mvar_writer, 1, writer_argv, 3, 0, default_fds);
+        int64_t pid = createProcess("mvar_writer", mvar_writer, 1, writer_argv, 3, 0, fds);
         if (pid < 0)
         {
-            printf("Error: Could not create writer %d\n", i);
+            fprintf(output_fd, "Error: Could not create writer %d\n", i);
         }
     }
 
@@ -555,15 +569,15 @@ int mvar_wrapper(int argc, char **argv)
         int_to_string(i, color_str);
 
         char *reader_argv[] = {color_str, NULL};
-        int64_t pid = createProcess("mvar_reader", mvar_reader, 1, reader_argv, 3, 0, default_fds);
+        int64_t pid = createProcess("mvar_reader", mvar_reader, 1, reader_argv, 3, 0, fds);
         if (pid < 0)
         {
-            printf("Error: Could not create reader %d\n", i);
+            fprintf(output_fd, "Error: Could not create reader %d\n", i);
         }
     }
 
-    printf("\e[1;32m=== MVAR: All processes created and running ===\e[0m\n");
-    printf("\e[1;33m=== Use 'ps' to see processes, 'kill <pid>' to stop them ===\e[0m\n");
+    fprintf(output_fd, "\e[1;32m=== MVAR: All processes created and running ===\e[0m\n");
+    fprintf(output_fd, "\e[1;33m=== Use 'ps' to see processes, 'kill <pid>' to stop them ===\e[0m\n");
 
     // Note: We don't wait for processes or cleanup semaphores because they run indefinitely
     // The user must manually kill the processes when done

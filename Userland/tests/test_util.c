@@ -88,11 +88,15 @@ uint64_t max_value = 0;
 
 void zero_to_max()
 {
+  int fds[2];
+  getFD(fds);
+  int output_fd = fds[1];
+  
   uint64_t value = 0;
-  printf("PROCESS %d STARTED! (counting to %d)\n", getpid(), max_value);
+  fprintf(output_fd, "PROCESS %d STARTED! (counting to %d)\n", getpid(), max_value);
   while (value++ != max_value)
     ;
-  printf("PROCESS %d DONE!\n", getpid());
+  fprintf(output_fd, "PROCESS %d DONE!\n", getpid());
 }
 
 int zero_to_max_wrapper(int argc, char **argv)
@@ -117,9 +121,12 @@ int test_mm_wrapper(int argc, char **argv)
 
   if (argc < 2)
   {
+    int fds[2];
+    getFD(fds);
+    int output_fd = fds[1];
     // No arguments, use default
     test_argv[0] = DEFAULT_TEST_MM_MEMORY;
-    printf("test_mm: Using default max_memory = %s bytes\n", DEFAULT_TEST_MM_MEMORY);
+    fprintf(output_fd, "test_mm: Using default max_memory = %s bytes\n", DEFAULT_TEST_MM_MEMORY);
     return (int)test_mm(1, test_argv);
   }
 
@@ -136,9 +143,12 @@ int test_prio_wrapper(int argc, char **argv)
 
   if (argc < 2)
   {
+    int fds[2];
+    getFD(fds);
+    int output_fd = fds[1];
     // No arguments, use default
     test_argv[0] = DEFAULT_TEST_PRIO_VALUE;
-    printf("test_prio: Using default max_value = %s\n", DEFAULT_TEST_PRIO_VALUE);
+    fprintf(output_fd, "test_prio: Using default max_value = %s\n", DEFAULT_TEST_PRIO_VALUE);
     return (int)test_prio(1, test_argv);
   }
 
@@ -154,10 +164,13 @@ int test_sync_wrapper(int argc, char **argv)
 
   if (argc < 3)
   {
+    int fds[2];
+    getFD(fds);
+    int output_fd = fds[1];
     // Not enough arguments, use defaults
     default_args[0] = DEFAULT_TEST_SYNC_ITERS;
     default_args[1] = DEFAULT_TEST_SYNC_USE_SEM;
-    printf("test_sync: Using defaults: iterations=%s, use_semaphore=%s\n",
+    fprintf(output_fd, "test_sync: Using defaults: iterations=%s, use_semaphore=%s\n",
            DEFAULT_TEST_SYNC_ITERS, DEFAULT_TEST_SYNC_USE_SEM);
     return (int)test_sync(2, default_args);
   }
@@ -174,10 +187,13 @@ int test_synchro_wrapper(int argc, char **argv)
 
   if (argc < 2)
   {
+    int fds[2];
+    getFD(fds);
+    int output_fd = fds[1];
     // No iterations argument provided, use default
     default_args[0] = DEFAULT_TEST_SYNC_ITERS;
     default_args[1] = "1"; // Always use semaphore
-    printf("test_synchro: Using defaults: iterations=%s, use_semaphore=1\n",
+    fprintf(output_fd, "test_synchro: Using defaults: iterations=%s, use_semaphore=1\n",
            DEFAULT_TEST_SYNC_ITERS);
     return (int)test_sync(2, default_args);
   }
@@ -198,10 +214,13 @@ int test_no_synchro_wrapper(int argc, char **argv)
 
   if (argc < 2)
   {
+    int fds[2];
+    getFD(fds);
+    int output_fd = fds[1];
     // No iterations argument provided, use default
     default_args[0] = DEFAULT_TEST_SYNC_ITERS;
     default_args[1] = "0"; // Never use semaphore
-    printf("test_no_synchro: Using defaults: iterations=%s, use_semaphore=0\n",
+    fprintf(output_fd, "test_no_synchro: Using defaults: iterations=%s, use_semaphore=0\n",
            DEFAULT_TEST_SYNC_ITERS);
     return (int)test_sync(2, default_args);
   }
@@ -222,9 +241,12 @@ int test_processes_wrapper(int argc, char **argv)
 
   if (argc < 2)
   {
+    int fds[2];
+    getFD(fds);
+    int output_fd = fds[1];
     // No arguments, use default
     test_argv[0] = DEFAULT_TEST_PROCESSES_MAX;
-    printf("test_processes: Using default max_processes = %s\n", DEFAULT_TEST_PROCESSES_MAX);
+    fprintf(output_fd, "test_processes: Using default max_processes = %s\n", DEFAULT_TEST_PROCESSES_MAX);
     return (int)test_processes(1, test_argv);
   }
 
