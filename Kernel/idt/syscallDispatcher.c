@@ -2,7 +2,6 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include <syscallDispatcher.h>
 #include <stddef.h>
-#include <sound.h>
 #include <keyboard.h>
 #include <fonts.h>
 #include <lib.h>
@@ -28,10 +27,6 @@ int32_t syscallDispatcher(Registers *registers)
 	case 4:
 		return sys_write(registers->rdi, (char *)registers->rsi, registers->rdx);
 
-	case 0x80000000:
-		return sys_start_beep(registers->rdi);
-	case 0x80000001:
-		return sys_stop_beep();
 	case 0x80000002:
 		return sys_fonts_text_color(registers->rdi);
 	case 0x80000003:
@@ -174,18 +169,6 @@ int32_t sys_read(int32_t fd, signed char *__user_buf, int32_t count)
 // ==================================================================
 // Custom system calls
 // ==================================================================
-
-int32_t sys_start_beep(uint32_t nFrequence)
-{
-	play_sound(nFrequence);
-	return 0;
-}
-
-int32_t sys_stop_beep(void)
-{
-	setSpeaker(SPEAKER_OFF);
-	return 0;
-}
 
 int32_t sys_fonts_text_color(uint32_t color)
 {
