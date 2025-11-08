@@ -77,148 +77,89 @@ make status       # Muestra el memory manager actualmente configurado
 
 ## Comandos de la Shell
 
-### Comandos Built-in (síncronos)
+### Comandos Built‑in (síncronos)
 
-| Comando             | Descripción                                   | Uso                |
-| ------------------- | --------------------------------------------- | ------------------ |
-| `help`              | Muestra lista de comandos disponibles         | `help`             |
-| `man <cmd>`         | Muestra ayuda detallada de un comando         | `man ps`           |
-| `clear`             | Limpia la pantalla                            | `clear`            |
-| `echo <args>`       | Imprime argumentos en pantalla                | `echo Hello World` |
-| `font <size>`       | Cambia tamaño de fuente (1-3)                 | `font 2`           |
-| `regs`              | Muestra registros guardados (requiere Ctrl+R) | `regs`             |
-| `mem`               | Muestra estado de la memoria dinámica         | `mem`              |
-| `ps`                | Lista todos los procesos activos              | `ps`               |
-| `kill <pid>`        | Termina un proceso por PID                    | `kill 5`           |
-| `block <pid>`       | Bloquea/desbloquea un proceso                 | `block 5`          |
-| `nice <pid> <prio>` | Cambia prioridad de un proceso (1-10)         | `nice 5 8`         |
+| Comando             | Descripción                                                       | Uso                    |
+| ------------------- | ----------------------------------------------------------------- | ---------------------- |
+| `help`              | Lista todos los comandos disponibles                              | `help`                 |
+| `man <cmd>`         | Muestra descripción y sintaxis de un comando                      | `man ps`               |
+| `clear`             | Limpia la pantalla                                                | `clear`                |
+| `echo <args>`       | Imprime los argumentos separados por espacios                     | `echo Hello World`     |
+| `font [increase|decrease]` | Aumenta o disminuye el tamaño de la fuente                       | `font increase`        |
+| `mem`               | Muestra el estado de la memoria dinámica                          | `mem`                  |
+| `ps`                | Lista procesos con PID, estado, prioridad y foreground/background | `ps`                   |
+| `kill <pid>`        | Termina el proceso indicado                                       | `kill 5`               |
+| `block <pid>`       | Alterna el estado entre bloqueado y listo                         | `block 5`              |
+| `nice <pid> <prio>` | Cambia la prioridad (1–5, 5 es la más alta)                       | `nice 7 5`             |
 
-### Comandos de Proceso (pueden ejecutarse en background)
+Notas:
+- Los built‑ins se ejecutan en el contexto de la shell (no crean procesos).
+- La shell protege procesos críticos: no permite matar/bloquear `init` (PID 1) ni a sí misma.
 
-| Comando          | Descripción                        | Uso                  |
-| ---------------- | ---------------------------------- | -------------------- |
-| `counter [max]`  | Cuenta de 1 a max                  | `counter 100`        |
-| `loop [seconds]` | Imprime PID cada N segundos        | `loop 3`             |
-| `loop_ps`        | Ejecuta ps cada segundo            | `loop_ps &`          |
-| `filter`         | Filtra vocales de entrada          | `cat file \| filter` |
-| `cat`            | Imprime entrada estándar           | `cat`                |
-| `wc`             | Cuenta líneas de entrada           | `cat file \| wc`     |
-| `mvar`           | Variable compartida entre procesos | `mvar`               |
+### Comandos que crean procesos (soportan pipes; algunos corren en background por defecto)
+
+| Comando                         | Descripción                                                                 | Uso                           | Detalles |
+| ------------------------------- | --------------------------------------------------------------------------- | ----------------------------- | -------- |
+| `counter [max]`                 | Cuenta de 1 a `max` y termina                                               | `counter 100`                 | `max` por defecto: 10 |
+| `loop [seconds]`                | Imprime un saludo con su PID cada N segundos                                | `loop 3`                      | Corre en background por defecto; `seconds` por defecto: 2 |
+| `loop_ps`                       | Muestra el estado de la shell periódicamente                                | `loop_ps`                     | Background por defecto |
+| `filter`                        | Lee de stdin y filtra vocales                                               | `filter`                      | Termina con Ctrl+D; ideal para `cat | filter` |
+| `cat`                           | Repite exactamente lo que recibe por stdin                                   | `cat`                         | Termina con Ctrl+D |
+| `wc [-l] [-w] [-c]`            | Cuenta líneas, palabras y caracteres de stdin                               | `wc -l -w -c`                 | Sin opciones muestra todo |
+| `test_mm <max_memory_bytes>`    | Stress test del memory manager                                               | `test_mm 2048`                | Por defecto usa 1024 si se omite |
+| `test_processes <max_proc>`     | Crea N procesos tipo `endless_loop` y los mata/bloquea aleatoriamente       | `test_processes 10`           | Por defecto 5 |
+| `test_prio <max_value>`         | Ejecuta 3 procesos que cuentan hasta `max_value` en 3 fases de prioridad     | `test_prio 1000000`           | Por defecto 1000000000 |
+| `test_synchro [iterations]`     | Test de sincronización CON semáforo                                         | `test_synchro 5000`           | Iteraciones por defecto: 1000 |
+| `test_no_synchro [iterations]`  | Test de sincronización SIN semáforo                                         | `test_no_synchro 5000`        | Iteraciones por defecto: 1000 |
+| `mvar <writers> <readers>`      | Problema lectores/escritores sobre una variable compartida                  | `mvar 2 3`                    | Writers 1–26, readers ≥ 1; corre indefinidamente |
 
 ---
 
 ## Tests
 
-El sistema incluye 4 tests exhaustivos:
+Los siguientes tests están integrados como comandos de la shell. Todos heredan stdin/stdout de la shell (compatibles con pipes) y aceptan valores por defecto si se omiten los parámetros.
 
-### 1. test_mm - Test de Memory Manager
-
-Prueba el allocator dinámico con múltiples procesos.
+### 1) test_mm — Memory Manager
 
 ```bash
-test_mm [max_memory]
+test_mm <max_memory_bytes>
 ```
 
-**Parámetros:**
+- Ejecuta alocaciones y frees aleatorios hasta `max_memory_bytes`, verifica con `memcheck` y repite indefinidamente.
+- Parámetro: `max_memory_bytes` (por defecto 1024 si se omite desde la shell).
 
-- `max_memory`: Cantidad máxima de memoria a alocar en bytes (default: 1024)
-
-**Ejemplo:**
+### 2) test_processes — Creación/gestión de procesos
 
 ```bash
-test_mm 2048
+test_processes <max_processes>
 ```
 
-**Qué prueba:**
+- Crea `max_processes` procesos `endless_loop` (background) y luego, en bucles, los va bloqueando/desbloqueando o matando aleatoriamente hasta terminar con todos.
+- Parámetro: `max_processes` (por defecto 5).
 
-- Allocaciones y liberaciones concurrentes
-- Fragmentación de memoria
-- Condiciones de memoria agotada
-- Corrección de punteros retornados
-
----
-
-### 2. test_processes - Test de Creación de Procesos
-
-Crea y elimina procesos recursivamente.
+### 3) test_prio — Prioridades del scheduler
 
 ```bash
-test_processes [max_processes]
+test_prio <max_value>
 ```
 
-**Parámetros:**
+Tres fases sobre 3 procesos que cuentan hasta `max_value`:
+- Fase A: misma prioridad para los 3 (terminan aproximadamente juntos).
+- Fase B: cambia prioridades con `nice()` y se observa el efecto.
+- Fase C: aplica `nice()` mientras están bloqueados y luego se desbloquean (el cambio persiste).
 
-- `max_processes`: Número máximo de procesos a crear (default: 5)
+Parámetro: `max_value` (por defecto 1000000000).
 
-**Ejemplo:**
+### 4) test_synchro / test_no_synchro — Sincronización
 
 ```bash
-test_processes 10
+test_synchro [iterations]      # con semáforo
+test_no_synchro [iterations]   # sin semáforo
 ```
 
-**Qué prueba:**
-
-- Creación masiva de procesos
-- Destrucción correcta de procesos
-- Reciclaje de PIDs
-- Límites del sistema
-
----
-
-### 3. test_prio - Test de Prioridades
-
-Verifica el scheduler con diferentes prioridades.
-
-```bash
-test_prio [iterations]
-```
-
-**Parámetros:**
-
-- `iterations`: Número de iteraciones por proceso (default: 1000000000)
-
-**Ejemplo:**
-
-```bash
-test_prio 500000000
-```
-
-**Qué prueba:**
-
-- Scheduling round-robin
-- Respeto de prioridades (más prioridad = más CPU time)
-- Fairness entre procesos de igual prioridad
-
----
-
-### 4. test_sync - Test de Sincronización
-
-Prueba semáforos con múltiples procesos.
-
-```bash
-test_sync [iterations] [use_sem]
-```
-
-**Parámetros:**
-
-- `iterations`: Número de incrementos por proceso (default: 1000)
-- `use_sem`: 1 = con semáforos, 0 = sin semáforos (default: 1)
-
-**Ejemplo:**
-
-```bash
-# Con semáforo (debe dar resultado correcto)
-test_sync 10000 1
-
-# Sin semáforo (demuestra race condition)
-test_sync 10000 0
-```
-
-**Qué prueba:**
-
-- Exclusión mutua con semáforos
-- Race conditions (cuando use_sem=0)
-- Operaciones atómicas
+- Crea pares de procesos que incrementan/decrementan sobre una variable global compartida.
+- Con semáforo el valor final es determinístico; sin semáforo se observan race conditions.
+- Parámetro: `iterations` por proceso (por defecto 1000 en ambos comandos).
 
 ---
 
@@ -232,10 +173,27 @@ Conecta la salida de un comando con la entrada de otro.
 # Ejemplo básico
 counter 50 | wc
 
-**Comportamiento:**
+**Sintaxis básica:** `comandoA | comandoB`
 
-- Los procesos se ejecutan concurrentemente
-- Salida del primero → entrada del segundo
+**Reglas / comportamiento real:**
+- Solo se soportan por ahora pipes de un único nivel (A | B). No hay cadenas múltiples (A | B | C) ni built‑ins a la izquierda/derecha.
+- Ambos comandos deben ser de tipo proceso (no built‑ins). Si alguno no lo es, la shell devuelve error.
+- La shell crea un pipe (buffer circular de 4KB) y ajusta los FDs:
+  - Proceso izquierdo: `stdout = pipe_write`, `stdin = FD_STDIN`.
+  - Proceso derecho: `stdin = pipe_read`, `stdout = FD_STDOUT`.
+- Ambos procesos se crean como foreground. El izquierdo escribe en el pipe (su stdout apunta al extremo de escritura) y el derecho lee del pipe (su stdin apunta al extremo de lectura). La shell espera primero al derecho y luego al izquierdo antes de devolver el prompt.
+- EOF para el proceso derecho ocurre cuando el izquierdo cierra su extremo de escritura (fin del proceso) y no quedan writers.
+- Ctrl+D en la shell NO envía EOF al pipe: solo cierra la entrada estándar de la shell. Para terminar el lector, debe finalizar el escritor.
+- No se mezclan colores/formato: cada proceso escribe usando sus propios FDs.
+
+**Errores típicos manejados:** comando inexistente, pipe mal formado (`|` sin comando a un lado), uso de built‑in en pipe.
+
+**Ejemplos:**
+```bash
+counter 100 | wc          # Cuenta la cantidad de líneas/ palabras emitidas por counter
+cat | filter              # Ingresa texto, filtra vocales
+cat | wc -c               # Cuenta caracteres ingresados manualmente
+```
 
 ### Operador de Background `&`
 
@@ -247,11 +205,26 @@ counter 10 &
 
 ```
 
-**Comportamiento:**
+**Sintaxis:** `comando [&]`
 
-- La shell retorna inmediatamente
-- El proceso sigue ejecutándose
-- Mensajes de finalización se muestran asincrónicamente
+**Reglas / comportamiento:**
+- Agregar `&` al final fuerza background aunque el comando esté marcado como foreground por defecto.
+- Comandos marcados internamente como background (por ejemplo `loop`, `loop_ps`) no necesitan `&`, pero aceptan que se les agregue (no cambia nada).
+- Un proceso en background NO puede leer desde `stdin` de la shell (lecturas retornan EOF inmediatamente); esto evita que bloquee la interacción del usuario.
+- La shell imprime el PID creado y continúa aceptando comandos. Al finalizar el proceso, su mensaje de cierre (si lo tiene) aparece intercalado.
+- Si se combina con pipe, el `&` se ignora: ambos procesos del pipe se crean como foreground y la shell gestiona la espera secuencial.
+
+**Ejemplos:**
+```bash
+loop &              # Inicia loop en background (equivalente a solo 'loop')
+counter 50 &        # Cuenta sin bloquear la shell
+loop_ps &           # Monitorea estado de la shell mientras interactúas
+```
+
+**Limitaciones actuales:**
+- No hay job control avanzado (fg, bg, jobs).
+- No se puede enviar entrada interactiva a procesos ya iniciados en background.
+- `&` múltiple o en medio del comando no está soportado (solo al final).
 
 ---
 
@@ -261,7 +234,6 @@ counter 10 &
 | ----------- | ------------------------------------ |
 | `Ctrl + C`  | Mata el proceso en foreground actual |
 | `Ctrl + D`  | Envía EOF a la entrada estándar      |
-| `Ctrl + R`  | Guarda registros para ver con `regs` |
 | `Enter`     | Ejecuta comando                      |
 | `Backspace` | Borra carácter anterior              |
 
@@ -304,6 +276,9 @@ nice 7 5  # Máxima prioridad
 # Filtrar vocales de la salida de counter
 counter 100 | filter
 
+# Contar solo líneas de la entrada
+cat | wc -l
+
 ```
 
 ### Ejemplo 3: Testing del Memory Manager
@@ -330,12 +305,12 @@ mem
 
 ```bash
 # Con semáforo (correcto)
-test_sync 5000 1
-# Debería imprimir: "Final value: 50000" (10 procesos × 5000)
+test_synchro 5000
+# Determinístico: suma y resta protegidas por semáforo
 
 # Sin semáforo (race condition)
-test_sync 5000 0
-# Imprimirá un valor incorrecto debido a race conditions
+test_no_synchro 5000
+# Observa variaciones en el valor global por condiciones de carrera
 ```
 
 ### Ejemplo 5: Testing de Scheduler
@@ -350,6 +325,14 @@ ps
 # Observar que procesos con más prioridad avanzan más rápido
 ```
 
+### Ejemplo 6: mvar en ejecución
+
+```bash
+# Crear 2 writers y 3 readers (stream coloreado infinito hasta que mates los procesos)
+mvar 2 3
+# Para detenerlos: 'ps' para ver PIDs y luego 'kill <pid>'
+```
+
 ---
 
 ## Características Implementadas
@@ -361,15 +344,17 @@ ps
   - Creación, destrucción y cambio de contexto
   - PIDs únicos y reciclables
   - Estados: READY, RUNNING, BLOCKED, KILLED
-  - Proceso idle (PID 0)
-  - Heap independiente por proceso
+  - Proceso idle (PID 1)
 
 - [x] **Scheduler**
+  - Round-robin multinivel con colas separadas por prioridad (1–5)
+  - Quantum uniforme (DEFAULT_QUANTUM) para todos los procesos
+  - Selección: siempre se toma el primer proceso READY de la cola de mayor prioridad disponible
+  - Aging: procesos que esperan acumulan `agingCounter`; al superar `AGING_THRESHOLD` reciben boost temporal (hasta `MAX_AGING_BOOST` niveles). Al terminar su turno se restaura `originalPriority`.
+  - Init (PID 1) y Shell (PID 2) excluidos del aging/boost
+  - Preemption por timer tick y yield voluntario (`yield()`)
+  - Syscalls relevantes: `yield()`, `sleep()`, `getpid()`
 
-  - Round-robin con prioridades (1-10)
-  - Mayor prioridad = más quantum time
-  - Preemption por timer tick
-  - Syscalls: `yield()`, `sleep()`, `getpid()`, `ps_info()`
 
 - [x] **Semáforos**
 
@@ -402,7 +387,7 @@ ps
 - [x] **Shell**
 
   - Parsing de comandos y argumentos
-  - Pipes con múltiples comandos
+  - Pipes 
   - Background execution
   - Comandos built-in y de proceso
 
@@ -414,6 +399,29 @@ ps
 
 - [x] **Tests completos**
   - test_mm, test_processes, test_prio, test_sync
+
+## Decisiones de Diseño
+
+| Tema | Elección | Ventajas | Trade-offs |
+|------|----------|----------|------------|
+| Recolección de procesos (wait) | `wait(pid,&status)` bloquea al padre hasta terminar el hijo; el kernel libera recursos al finalizar (no zombies persistentes). | Tabla de procesos limpia; simple de razonar; status disponible inmediatamente. | Sin señal asíncrona (no SIGCHLD); si el padre nunca llama a `wait` no ve el código de salida; no hay reapertura de procesos huérfanos. |
+| Quantum y prioridades | Quantum uniforme + aging con boost temporal, restaurando prioridad original tras turno. | Implementación sencilla; evita inanición; comportamiento estable. | Menos control fino por prioridad (no ajusta tamaño de quantum); posible subutilización de CPU para procesos muy interactivos. |
+| stdin en background | Lecturas en procesos background devuelven EOF inmediatamente. | Evita bloquear la shell; fácil de implementar. | Limita comandos interactivos en background; no hay redirección de entrada alternativa. |
+| File Descriptors | Fijos (0 stdin, 1 stdout, 2 stderr parcial) + pipe de un salto (A | B). | Código simple; herencia de FDs clara; bajo overhead. | Sin pipelines múltiples, redirecciones (> >> <) ni stderr completo. |
+| Memory Manager seleccionable | Elección Naive o Buddy por flag de compilación (no hot‑swap). | Comparación directa; reduce complejidad en runtime. | No se puede cambiar en ejecución; requiere recompilar para experimentar. |
+| Semáforos | Conteo clásico sin detección de deadlock ni prioridades. | Ligero y rápido; API mínima (`open/close/wait/post/destroy`). | Posibles deadlocks si se abusa; sin herencia de prioridad ni timeouts. |
+
+## Resumen de Verificación de Requerimientos
+
+| Requerimiento | Sección / Ejemplo |
+|--------------|-------------------|
+| Compilación y ejecución | "Compilación y Ejecución" + scripts `compile.sh`, `run.sh` |
+| Descripción comandos/tests y parámetros | Tablas en "Comandos de la Shell" y sección "Tests" |
+| Pipes y background (`|`, `&`) | "Pipes y Background" (reglas, ejemplos) |
+| Atajos de teclado (interrumpir / EOF) | "Atajos de Teclado" (Ctrl+C, Ctrl+D) |
+| Ejemplos de funcionamiento | Sección "Ejemplos de Uso" (1–6) |
+| Requerimientos faltantes / parciales | "Limitaciones Conocidas" + "Características No Implementadas" |
+| Justificación de diseño | Nueva sección "Decisiones de Diseño" |
 
 ---
 
@@ -442,21 +450,15 @@ ps
    - No hay detección de deadlock
 
 6. **Scheduler**:
-   - No hay diferenciación entre procesos I/O-bound y CPU-bound
-   - No implementa aging para prevenir starvation
+  - Round-robin multinivel con colas separadas por prioridad (1–5)
+  - Quantum uniforme (DEFAULT_QUANTUM) para todos los procesos
+  - Selección: siempre se toma el primer proceso READY de la cola de mayor prioridad disponible
+  - Aging: procesos que esperan acumulan `agingCounter`; al superar `AGING_THRESHOLD` reciben boost temporal (hasta `MAX_AGING_BOOST` niveles). Al terminar su turno se restaura `originalPriority`.
+  - Init (PID 1) y Shell (PID 2) excluidos del aging/boost
+  - Preemption por timer tick y yield voluntario (`yield()`)
+  - Syscalls relevantes: `yield()`, `sleep()`, `getpid()`
 
-### Características No Implementadas
 
-- [ ] Sistema de archivos persistente
-- [ ] Networking
-- [ ] Múltiples terminales
-- [ ] Variables de entorno
-- [ ] Signals (excepto Ctrl+C)
-- [ ] Job control completo
-- [ ] Dynamic linking
-- [ ] Multicore scheduling real (solo simula)
-
----
 
 ## Notas de Desarrollo
 
@@ -477,7 +479,7 @@ TP2-Sistemas-Operativos/
 └── Image/             # Imagen de disco generada
 ```
 
-### Selección de Memory Manager
+### Selección de Memory Manager (con compile escribir)
 
 Al compilar con `make naive` o `make buddy`, se define una macro de compilación que selecciona el manager en `Kernel/memory/`:
 

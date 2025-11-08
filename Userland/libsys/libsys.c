@@ -203,6 +203,11 @@ void semDestroy(int semId)
     sys_sem_destroy(semId);
 }
 
+int32_t semSetValue(int semId, int newValue)
+{
+    return sys_sem_set(semId, newValue);
+}
+
 // ==================================================================
 // File descriptor management wrappers
 // ==================================================================

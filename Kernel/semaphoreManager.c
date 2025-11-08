@@ -185,3 +185,35 @@ int semDestroy(int semId){
     return 0;
 }
 
+// Set a semaphore to an absolute value. If increasing, wake up waiting processes.
+// If decreasing below current value, we just reduce the counter (never negative). If newValue < 0 returns -1.
+// Waking strategy: when raising value, we unblock as many waiting processes as allowed by the new capacity.
+int semSetValue(int semId, int newValue){
+    if (semId < 0 || semId >= MAX_SEMS || newValue < 0) {
+        return -1;
+    }
+
+    acquire_spinlock(&sems[semId].locked);
+
+    if (sems[semId].used == 0) {
+        release_spinlock(&sems[semId].locked);
+        return -1;
+    }
+
+    int oldValue = sems[semId].value;
+    sems[semId].value = newValue;
+
+    // If we increased the value, unblock up to (newValue - oldValue) processes or until queue empties
+    if (newValue > oldValue) {
+        int available = newValue - oldValue;
+        while (available > 0 && !isEmpty(sems[semId].waiting)) {
+            PID pid = (PID)dequeue(sems[semId].waiting);
+            unblockProcess(pid);
+            available--;
+        }
+    }
+
+    release_spinlock(&sems[semId].locked);
+    return 0;
+}
+

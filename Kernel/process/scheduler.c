@@ -199,7 +199,7 @@ uint64_t *switchContext(uint64_t *rsp)
     } while (currentProcess->state == BLOCKED || currentProcess->state == EXITED);
 
     clearYield();
-    quantumsLeft = currentProcess->priority - 1;
+    quantumsLeft = DEFAULT_QUANTUM;
     currentProcess->state = RUNNING;
     currentProcess->agingCounter = 0; // Reset aging counter when process runs
     

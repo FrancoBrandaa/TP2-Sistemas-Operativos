@@ -97,5 +97,11 @@ int semDestroy(int semId);
  */
 int semValue(int semId);
 
+/*
+ * Sets the semaphore to an absolute value (>=0). If the value increases, up to the delta
+ * number of waiting processes are unblocked. Returns 0 on success or a negative value on failure.
+ */
+int semSetValue(int semId, int newValue);
+
 
 
