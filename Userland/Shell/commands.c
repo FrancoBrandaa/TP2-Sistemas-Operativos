@@ -34,22 +34,30 @@ int counter_wrapper(int argc, char **argv)
     int max = 10;
     int64_t pid = getpid();
 
+    // Use inherited FDs so it can be piped (stdout may be a pipe write-end)
+    int fds[2];
+    getFD(fds);
+    int out = fds[1];
+
     if (argc > 1)
     {
         max = satoi(argv[1]);
     }
 
-    printf("\e[0;36m[Process %d] Counting to %d...\e[0m\n", pid, max);
+    fprintf(out, "\e[0;36m[Process %d] Counting to %d...\e[0m\n", pid, max);
 
     for (int i = 1; i <= max; i++)
     {
-        printf("\e[0;36m[%d]\e[0m %d ", pid, i);
+        fprintf(out, "\e[0;36m[%d]\e[0m %d ", pid, i);
         if (i % 10 == 0)
-            printf("\n");
+            fprintf(out, "\n");
         bussy_wait(200000000); // 200ms delay
     }
 
-    printf("\n\e[0;32m[Process %d] Done! Counted to %d\e[0m\n", pid, max);
+    fprintf(out, "\n\e[0;32m[Process %d] Done! Counted to %d\e[0m\n", pid, max);
+
+    // Señalar EOF al siguiente proceso del pipe (si lo hay)
+    closeFD(out);
     return max; // Return the count as exit status
 }
 
