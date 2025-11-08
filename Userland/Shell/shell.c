@@ -85,8 +85,8 @@ Command commands[] = {
      .handler.builtin = mem},
 
     {.name = "kill",
-     .description = "Kills a process by PID",
-     .usage = "kill <pid>",
+     .description = "Kills a process by PID or all user processes",
+     .usage = "kill <pid> | kill all",
      .type = CMD_BUILTIN,
      .handler.builtin = kill_cmd},
 
@@ -749,10 +749,55 @@ int kill_cmd(int argc, char **argv)
 {
     if (argc < 2)
     {
-        fprintf(FD_STDERR, "Usage: kill <pid>\n");
+        fprintf(FD_STDERR, "Usage: kill <pid> | kill all\n");
         return 1;
     }
 
+    // Check for "kill all" command
+    if (strcasecmp(argv[1], "all") == 0)
+    {
+        Process *processes = getProcessList();
+
+        if (processes == NULL)
+        {
+            fprintf(FD_STDERR, "Error: Could not retrieve process information\n");
+            return 1;
+        }
+
+        int killed_count = 0;
+        int failed_count = 0;
+        PID shell_pid = getpid();
+
+        printf("Killing all user processes...\n");
+
+        for (int i = 0; processes[i].pid != NONPID; i++)
+        {
+            PID pid = processes[i].pid;
+
+            // Skip init process (PID 1) and shell (PID 2)
+            if (pid == INIT_PID || pid == shell_pid)
+            {
+                continue;
+            }
+
+            int32_t result = kill(pid);
+            if (result == 0)
+            {
+                printf("  Process %d killed\n", pid);
+                killed_count++;
+            }
+            else
+            {
+                printf("  Failed to kill process %d (code: %d)\n", pid, result);
+                failed_count++;
+            }
+        }
+
+        printf("\nSummary: %d processes killed, %d failed\n", killed_count, failed_count);
+        return failed_count > 0 ? 1 : 0;
+    }
+
+    // Normal kill command with PID
     long pid = satoi(argv[1]);
 
     if (pid <= 0)
