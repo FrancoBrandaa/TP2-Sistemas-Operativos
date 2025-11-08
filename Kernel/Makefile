@@ -52,13 +52,13 @@ naive:
 	@echo "Switching to Naive Memory Manager..."
 	$(MAKE) clean
 	$(MAKE) MEMORY_MANAGER=naive all
-	@echo "✅ Kernel compiled with Naive Memory Manager"
+	@echo "Kernel compiled with Naive Memory Manager"
 
 buddy:
 	@echo "Switching to Buddy Memory Manager..."
 	$(MAKE) clean
 	$(MAKE) MEMORY_MANAGER=buddy all
-	@echo "✅ Kernel compiled with Buddy Memory Manager"
+	@echo "Kernel compiled with Buddy Memory Manager"
 
 # Show current memory manager
 status:

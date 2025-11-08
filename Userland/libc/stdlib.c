@@ -2,8 +2,6 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include <stdlib.h>
 
-// C's stdlib pseudo random number generator
-// https://wiki.osdev.org/Random_Number_Generator
 
 static unsigned long int next = 1;  // NB: "unsigned long int" is assumed to be 32 bits wide
 

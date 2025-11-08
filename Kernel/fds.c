@@ -1,9 +1,5 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "fds.h"
 #include "video.h"
 #include "keyboard.h"
@@ -74,15 +70,9 @@ int readFromFD(int fd, char *buf, int count) {
 
         if(stream->eof){
             semPost(stream->readSem);
-        } //esto no lo entiendo muy bien
+        } 
 
-        //  // Si EOF y no hay datos, salir
-        // if(stream->eof && stream->dataAvailable == 0) {
-        //     break;
-        // }
-        //si vamos por este sacar !stream->eof del if proximo
-
-        // // Esperar hasta que haya datos disponibles
+        // Esperar hasta que haya datos disponibles
         semWait(stream->readSem);
 
         
@@ -117,7 +107,6 @@ int writeToFD(int fd, const char *buf, int count, unsigned long hexColor) {
     if (fd == STDOUT || fd == STDERR)
     {
 
-        // int color = (fd == STDERR) ? 0x00FF0000 : hexColor;
         char toPrint[2] = {0, 0};
         for (written = 0; written < count; written++)
         {

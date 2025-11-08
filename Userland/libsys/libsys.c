@@ -4,16 +4,6 @@
 #include <syscalls.h>
 #include <process.h>
 
-void startBeep(uint32_t nFrequence)
-{
-    sys_start_beep(nFrequence);
-}
-
-void stopBeep(void)
-{
-    sys_stop_beep();
-}
-
 void setTextColor(uint32_t color)
 {
     sys_fonts_text_color(color);

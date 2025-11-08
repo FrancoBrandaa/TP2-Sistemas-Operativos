@@ -22,4 +22,3 @@ int test_sync_wrapper(int argc, char **argv);
 int test_synchro_wrapper(int argc, char **argv);
 int test_no_synchro_wrapper(int argc, char **argv);
 int test_processes_wrapper(int argc, char **argv);
-// int process_inc_wrapper(int argc, char **argv);

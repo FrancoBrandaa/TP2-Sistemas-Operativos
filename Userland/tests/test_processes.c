@@ -90,7 +90,7 @@ int64_t test_processes(uint64_t argc, char *argv[])
               fprintf(output_fd, "test_processes: ERROR killing process PID %d\n", p_rqs[rq].pid);
               return -1;
             }
-            // //  Wait for the process to free resources
+            //  Wait for the process to free resources
             // wait(p_rqs[rq].pid, NULL);
             p_rqs[rq].TestState = TEST_KILLED;
             alive--;

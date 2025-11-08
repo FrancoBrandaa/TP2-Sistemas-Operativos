@@ -33,8 +33,6 @@ int32_t sys_write(int32_t fd, char *__user_buf, int32_t count);
 int32_t sys_read(int32_t fd, signed char *__user_buf, int32_t count);
 
 // Custom syscall prototypes
-int32_t sys_start_beep(uint32_t nFrequence);
-int32_t sys_stop_beep(void);
 int32_t sys_fonts_text_color(uint32_t color);
 int32_t sys_fonts_background_color(uint32_t color);
 int32_t sys_fonts_decrease_size(void);

@@ -252,11 +252,3 @@ int test_processes_wrapper(int argc, char **argv)
 
   return (int)test_processes((uint64_t)(argc - 1), &argv[1]);
 }
-
-// // Wrapper for process_inc (used in test_sync)
-// int process_inc_wrapper(int argc, char **argv)
-// {
-//   extern uint64_t process_inc(uint64_t argc, char *argv[]);
-//   // This one is called from test_sync with correct args already, no adjustment needed
-//   return (int)process_inc((uint64_t)argc, argv);
-// }

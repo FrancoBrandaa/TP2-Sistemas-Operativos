@@ -7,7 +7,6 @@
 #include <idtLoader.h>
 #include <fonts.h>
 #include <syscallDispatcher.h>
-#include <sound.h>
 #include <memoryManager.h>
 #include <process.h>
 #include <scheduler.h>
