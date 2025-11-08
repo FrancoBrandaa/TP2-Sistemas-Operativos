@@ -92,7 +92,7 @@ int loop_wrapper(int argc, char **argv)
 
     while (1)
     {
-        fprintf(output_fd, "\e[0;35mSoy el proceso %d xd\e[0m\n", pid);
+        fprintf(output_fd, "\e[0;35mHola! soy el proceso %d xd\e[0m\n", pid);
         sleep(seconds * 1000); // Convert seconds to milliseconds
     }
 

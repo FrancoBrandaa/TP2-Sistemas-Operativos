@@ -112,7 +112,7 @@ Command commands[] = {
      .description = "Prints PID with greeting every N seconds",
      .usage = "loop [seconds]",
      .type = CMD_PROCESS,
-     .handler.process = {.entrypoint = loop_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 1, .allow_background = 1}},
+     .handler.process = {.entrypoint = loop_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0, .allow_background = 1}},
 
     {.name = "loop_ps",
      .description = "Runs ps in a loop to monitor shell state",
