@@ -38,12 +38,11 @@ int64_t test_processes(uint64_t argc, char *argv[])
     return -1;
 
   p_rq p_rqs[max_processes];
-  //int iteration = 0; no se esta usando
 
   while (1)
   {
     
-    alive = 0;
+    //alive = 0;
 
     // Create max_processes processes
     for (rq = 0; rq < max_processes; rq++)
@@ -54,21 +53,19 @@ int64_t test_processes(uint64_t argc, char *argv[])
       {
         fprintf(output_fd, "test_processes: ERROR creating process\n");
 
-        // Kill all processes created so far before exiting
-        for (int i = 0; i < rq; i++)
-        {
-          if (p_rqs[i].pid > 0)
-          {
-            kill(p_rqs[i].pid);
-            wait(p_rqs[i].pid, NULL);
-          }
-        }
-
+        // mata los procesos si tira error
+        // for (int i = 0; i < rq; i++)
+        // {
+        //   if (p_rqs[i].pid > 0)
+        //   {
+        //     kill(p_rqs[i].pid);
+        //     wait(p_rqs[i].pid, NULL);
+        //   }
+        // }
         return -1;
       }
       else
       {
-        
         p_rqs[rq].TestState = TEST_RUNNING;
         alive++;
       }
@@ -93,8 +90,8 @@ int64_t test_processes(uint64_t argc, char *argv[])
               fprintf(output_fd, "test_processes: ERROR killing process PID %d\n", p_rqs[rq].pid);
               return -1;
             }
-            //  Wait for the process to free resources
-            wait(p_rqs[rq].pid, NULL);
+            // //  Wait for the process to free resources
+            // wait(p_rqs[rq].pid, NULL);
             p_rqs[rq].TestState = TEST_KILLED;
             alive--;
           }
@@ -130,8 +127,5 @@ int64_t test_processes(uint64_t argc, char *argv[])
           p_rqs[rq].TestState = TEST_RUNNING;
         }
     }
-
-    // Wait for system to clean up resources before next iteration
-    
   }
 }

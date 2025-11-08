@@ -5,19 +5,20 @@
 #include "test_util.h"
 #include <libsys.h>
 
-#define SEM_ID "test_sync"
 #define TOTAL_PAIR_PROCESSES 2
+#define SEM_ID "test_sync"
 
 int64_t global; // shared memory
 
 void slowInc(int64_t *p, int64_t inc)
 {
   uint64_t aux = *p;
-  yield();    // This makes the race condition highly probable , pues en ese intante cede cpu a otros procesos si nhaber incrementado, pero como
+  yield();    // This makes the race condition highly probable , pues en ese intante cede cpu a otros procesos sin haber incrementado, pero como
   aux += inc; // tiene capturado el sem no pasa nada
   *p = aux;
 }
-uint64_t process_inc(uint64_t argc, char *argv[])
+
+int process_inc(int argc, char *argv[])
 {
   int fds[2];
   getFD(fds);
@@ -32,22 +33,13 @@ uint64_t process_inc(uint64_t argc, char *argv[])
     return -1;
 
   if ((n = satoi(argv[0])) <= 0)
-  {
-    fprintf(output_fd, "me meti en error 1");
     return -1;
-  }
 
   if ((inc = satoi(argv[1])) == 0)
-  {
-    fprintf(output_fd, "me meti en error 2");
     return -1;
-  }
 
   if ((use_sem = satoi(argv[2])) < 0)
-  {
-    fprintf(output_fd, "me meti en error 3");
     return -1;
-  }
 
   if (use_sem)
     if ((sem_index = semOpen(SEM_ID, 1)) < 0)
@@ -75,11 +67,11 @@ uint64_t process_inc(uint64_t argc, char *argv[])
     semClose(sem_index);
   }
 
-  fprintf(output_fd, "Process %d done, and global = %u\n", getpid(), global);
+  fprintf(output_fd, "Process %ld done, and global = %ld\n", getpid(), global);
   return 0;
 }
 
-uint64_t test_sync(uint64_t argc, char *argv[])
+int test_sync(uint64_t argc, char *argv[])
 { //{n, use_sem, 0}
   int fds[2];
   getFD(fds);
@@ -100,11 +92,11 @@ uint64_t test_sync(uint64_t argc, char *argv[])
   {
     // Crear procesos decrementadores
     extern int process_inc_wrapper(int argc, char **argv);
-    pids[i] = createProcess("process_inc", process_inc_wrapper, 3, argvDec, 5, 0, fds);
-    fprintf(output_fd, "Created decrementing process with PID %d\n", pids[i]);
+    pids[i] = createProcess("process_inc", process_inc, 3, argvDec, 5, 0, fds);
+    fprintf(output_fd, "Created decrementing process with PID %ld\n", pids[i]);
     // Crear procesos incrementadores
-    pids[i + TOTAL_PAIR_PROCESSES] = createProcess("process_inc", process_inc_wrapper, 3, argvInc, 5, 0, fds);
-    fprintf(output_fd, "Created incrementing process with PID %d\n", pids[i + TOTAL_PAIR_PROCESSES]);
+    pids[i + TOTAL_PAIR_PROCESSES] = createProcess("process_inc", process_inc, 3, argvInc, 5, 0, fds);
+    fprintf(output_fd, "Created incrementing process with PID %ld\n", pids[i + TOTAL_PAIR_PROCESSES]);
   } // crea cuatro procesos, dos que incrementan y dos que decrementan
 
   for (i = 0; i < TOTAL_PAIR_PROCESSES; i++)
@@ -116,7 +108,7 @@ uint64_t test_sync(uint64_t argc, char *argv[])
   int sem_index = semOpen(SEM_ID, 1);
   semDestroy(sem_index);
 
-  fprintf(output_fd, "Final value: %u\n", global);
+  fprintf(output_fd, "Final value: %ld\n", global);
 
   return 0;
 }

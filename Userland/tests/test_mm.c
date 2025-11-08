@@ -10,6 +10,7 @@
 
 
 #define MAX_BLOCKS 128
+#define NUM_ITERATIONS 50000
 
 typedef struct MM_rq
 {

@@ -20,12 +20,6 @@
 static char buffer[MAX_BUFFER_SIZE];
 static int buffer_dim = 0;
 
-/* Command history state */
-char command_history[HISTORY_SIZE][MAX_BUFFER_SIZE] = {0};
-char command_history_buffer[MAX_BUFFER_SIZE] = {0};
-uint8_t command_history_last = 0;
-static uint8_t last_command_arrowed = 0;
-
 /* Last command exit code (for $? substitution) */
 static uint64_t last_command_output = 0;
 
@@ -45,13 +39,6 @@ int kill_cmd(int argc, char **argv);
 int block_cmd(int argc, char **argv);
 int nice_cmd(int argc, char **argv);
 int test_cmd(int argc, char **argv);
-
-/* ============================================================================
- * KEYBOARD CALLBACK DECLARATIONS
- * ============================================================================ */
-
-static void printPreviousCommand(enum REGISTERABLE_KEYS scancode);
-static void printNextCommand(enum REGISTERABLE_KEYS scancode);
 
 // Lista de comandos disponibles
 Command commands[] = {
@@ -98,8 +85,8 @@ Command commands[] = {
      .handler.builtin = mem},
 
     {.name = "kill",
-     .description = "Kills a process by PID",
-     .usage = "kill <pid>",
+     .description = "Kills a process by PID or all user processes",
+     .usage = "kill <pid> | kill all",
      .type = CMD_BUILTIN,
      .handler.builtin = kill_cmd},
 
@@ -450,120 +437,9 @@ static int execute_pipe(char *left_cmd, char *right_cmd)
     return 0;
 }
 
-// KEYBOARD HISTORY
-static void printPreviousCommand(enum REGISTERABLE_KEYS scancode)
-{
-    // Calculate the previous position
-    uint8_t prev_position = SUB_MOD(last_command_arrowed, 1, HISTORY_SIZE);
-
-    // Check if there's a valid command at the previous position
-    if (command_history[prev_position][0] == 0)
-    {
-        // No more commands in history, don't move
-        return;
-    }
-
-    // Clear keyboard buffer
-    clearInputBuffer();
-
-    // Clear the entire line by returning to start and overwriting with spaces
-    fprintf(FD_STDOUT, "\r");
-    for (int i = 0; i < buffer_dim + 20; i++) // +20 for "shell $ " prompt and margin
-    {
-        fprintf(FD_STDOUT, " ");
-    }
-
-    // Return to start and reprint prompt
-    fprintf(FD_STDOUT, "\r\e[0mshell \e[0;32m$\e[0m ");
-
-    // Reset shell buffer
-    buffer_dim = 0;
-    buffer[0] = '\0';
-
-    // Navigate to previous command
-    last_command_arrowed = prev_position;
-
-    // Copy to buffer and display
-    strncpy(buffer, command_history[last_command_arrowed], MAX_BUFFER_SIZE - 1);
-    buffer[MAX_BUFFER_SIZE - 1] = '\0';
-    buffer_dim = strlen(buffer);
-    strncpy(command_history_buffer, buffer, MAX_BUFFER_SIZE - 1);
-
-    fprintf(FD_STDOUT, "%s", buffer);
-}
-
-static void printNextCommand(enum REGISTERABLE_KEYS scancode)
-{
-    // Calculate the next position
-    uint8_t next_position = (last_command_arrowed + 1) % HISTORY_SIZE;
-
-    // If next position is the current write position (command_history_last),
-    // we've reached the end - clear the line instead
-    if (next_position == command_history_last)
-    {
-        // Clear keyboard buffer
-        clearInputBuffer();
-
-        // Clear the entire line
-        fprintf(FD_STDOUT, "\r");
-        for (int i = 0; i < buffer_dim + 20; i++)
-        {
-            fprintf(FD_STDOUT, " ");
-        }
-
-        // Return to start and reprint prompt
-        fprintf(FD_STDOUT, "\r\e[0mshell \e[0;32m$\e[0m ");
-
-        // Reset to empty buffer (at the "present")
-        buffer_dim = 0;
-        buffer[0] = '\0';
-        command_history_buffer[0] = '\0';
-        last_command_arrowed = command_history_last;
-        return;
-    }
-
-    // Check if there's a valid command at the next position
-    if (command_history[next_position][0] == 0)
-    {
-        // No command here, don't move
-        return;
-    }
-
-    // Clear keyboard buffer
-    clearInputBuffer();
-
-    // Clear the entire line by returning to start and overwriting with spaces
-    fprintf(FD_STDOUT, "\r");
-    for (int i = 0; i < buffer_dim + 20; i++) // +20 for "shell $ " prompt and margin
-    {
-        fprintf(FD_STDOUT, " ");
-    }
-
-    // Return to start and reprint prompt
-    fprintf(FD_STDOUT, "\r\e[0mshell \e[0;32m$\e[0m ");
-
-    // Reset shell buffer
-    buffer_dim = 0;
-    buffer[0] = '\0';
-
-    // Navigate to next command
-    last_command_arrowed = next_position;
-
-    // Copy to buffer and display
-    strncpy(buffer, command_history[last_command_arrowed], MAX_BUFFER_SIZE - 1);
-    buffer[MAX_BUFFER_SIZE - 1] = '\0';
-    buffer_dim = strlen(buffer);
-    strncpy(command_history_buffer, buffer, MAX_BUFFER_SIZE - 1);
-
-    fprintf(FD_STDOUT, "%s", buffer);
-}
-
 int main()
 {
     clear(0, NULL);
-
-    registerKey(KP_UP_KEY, printPreviousCommand);
-    registerKey(KP_DOWN_KEY, printNextCommand);
 
     while (1)
     {
@@ -573,12 +449,10 @@ int main()
 
         while (buffer_dim < MAX_BUFFER_SIZE && (c = getchar()) != '\n')
         {
-            command_history_buffer[buffer_dim] = c;
             buffer[buffer_dim++] = c;
         }
 
         buffer[buffer_dim] = 0;
-        command_history_buffer[buffer_dim] = 0;
 
         if (buffer_dim == MAX_BUFFER_SIZE)
         {
@@ -636,12 +510,6 @@ int main()
         {
             // Valid pipe found, execute it
             last_command_output = execute_pipe(left_cmd, right_cmd);
-
-            // Save to history
-            strncpy(command_history[command_history_last], command_history_buffer, MAX_BUFFER_SIZE - 1);
-            command_history[command_history_last][buffer_dim] = '\0';
-            INC_MOD(command_history_last, HISTORY_SIZE);
-            last_command_arrowed = command_history_last;
         }
         else if (pipe_result == -1)
         {
@@ -664,12 +532,6 @@ int main()
             {
                 // Execute command (pass background flag)
                 last_command_output = execute_command(cmd, argc, argv, run_in_background);
-
-                // Save to history
-                strncpy(command_history[command_history_last], command_history_buffer, MAX_BUFFER_SIZE - 1);
-                command_history[command_history_last][buffer_dim] = '\0';
-                INC_MOD(command_history_last, HISTORY_SIZE);
-                last_command_arrowed = command_history_last;
             }
             else
             {
@@ -887,10 +749,55 @@ int kill_cmd(int argc, char **argv)
 {
     if (argc < 2)
     {
-        fprintf(FD_STDERR, "Usage: kill <pid>\n");
+        fprintf(FD_STDERR, "Usage: kill <pid> | kill all\n");
         return 1;
     }
 
+    // Check for "kill all" command
+    if (strcasecmp(argv[1], "all") == 0)
+    {
+        Process *processes = getProcessList();
+
+        if (processes == NULL)
+        {
+            fprintf(FD_STDERR, "Error: Could not retrieve process information\n");
+            return 1;
+        }
+
+        int killed_count = 0;
+        int failed_count = 0;
+        PID shell_pid = getpid();
+
+        printf("Killing all user processes...\n");
+
+        for (int i = 0; processes[i].pid != NONPID; i++)
+        {
+            PID pid = processes[i].pid;
+
+            // Skip init process (PID 1) and shell (PID 2)
+            if (pid == INIT_PID || pid == shell_pid)
+            {
+                continue;
+            }
+
+            int32_t result = kill(pid);
+            if (result == 0)
+            {
+                printf("  Process %d killed\n", pid);
+                killed_count++;
+            }
+            else
+            {
+                printf("  Failed to kill process %d (code: %d)\n", pid, result);
+                failed_count++;
+            }
+        }
+
+        printf("\nSummary: %d processes killed, %d failed\n", killed_count, failed_count);
+        return failed_count > 0 ? 1 : 0;
+    }
+
+    // Normal kill command with PID
     long pid = satoi(argv[1]);
 
     if (pid <= 0)

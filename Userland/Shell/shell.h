@@ -5,31 +5,7 @@
 #include "commands.h"
 
 #define MAX_BUFFER_SIZE 1024 /**< Maximum size for command input buffer */
-#define HISTORY_SIZE 10      /**< Number of commands to keep in history */
 #define MAX_ARGS 64          /**< Maximum number of arguments per command */
-
-/**
- * @brief Increments a value modulo m (circular increment)
- * @param x Value to increment
- * @param m Modulo value
- */
-#define INC_MOD(x, m) x = (((x) + 1) % (m))
-
-/**
- * @brief Subtracts two values modulo m (circular subtraction)
- * @param a First value
- * @param b Second value (to subtract)
- * @param m Modulo value
- * @return (a - b) mod m
- */
-#define SUB_MOD(a, b, m) ((a) - (b) < 0 ? (m) - (b) + (a) : (a) - (b))
-
-/**
- * @brief Decrements a value modulo m (circular decrement)
- * @param x Value to decrement
- * @param m Modulo value
- */
-#define DEC_MOD(x, m) ((x) = SUB_MOD(x, 1, m))
 
 /**
  * @brief Calculates the number of commands in the commands array
