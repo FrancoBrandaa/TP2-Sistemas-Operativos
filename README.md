@@ -45,7 +45,7 @@ El proyecto soporta dos implementaciones de memory manager:
 ./compile.sh buddy
 
 # Compilar con el memory manager por defecto
-./compile.sh all
+./compile.sh 
 ```
 
 El script `compile.sh`:
@@ -60,8 +60,6 @@ El script `compile.sh`:
 # Ejecutar el sistema operativo en QEMU
 ./run.sh
 ```
-
-**Nota:** El script `run.sh` está configurado para macOS (usa `coreaudio`). Para Linux, modificar la línea de audio en el script.
 
 ### Comandos Make Disponibles
 
