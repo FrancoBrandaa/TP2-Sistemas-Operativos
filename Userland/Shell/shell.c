@@ -383,7 +383,8 @@ static int execute_pipe(char *left_cmd, char *right_cmd)
         return -1;
     }
 
-    // Create left process (foreground, stdout = pipe write end)
+    // Create left process (run in background if allow_background is true)
+    int left_is_background = left_command->handler.process.allow_background;
     int left_fds[2] = {FD_STDIN, pipe_fds[1]}; // stdin=FD_STDIN, stdout=pipe_write
     int left_pid = createProcess(
         left_command->name,
@@ -391,7 +392,7 @@ static int execute_pipe(char *left_cmd, char *right_cmd)
         left_argc,
         left_argv,
         left_command->handler.process.priority,
-        1, // foreground (foreground=true) - FIXED!
+        !left_is_background, // foreground parameter is inverted (true = foreground, false = background)
         left_fds);
 
     if (left_pid < 0)
@@ -425,21 +426,17 @@ static int execute_pipe(char *left_cmd, char *right_cmd)
     // DON'T close pipe FDs in shell yet - let processes start first!
     // The processes will close them when they terminate
 
-    // Wait for both processes to complete
-    int32_t left_status, right_status;
-
-    // Wait for the foreground process (right) first
-    wait(right_pid, &right_status);
-
-    // Wait for the background process (left)
-    wait(left_pid, &left_status);
-
-    // Now it's safe to close pipe FDs in shell (if they weren't auto-closed)
-    closeFD(pipe_fds[0]);
-    closeFD(pipe_fds[1]);
-
-    // Clear any input that was typed during process execution
-    clearInputBuffer();
+    // Let processes manage their own FDs - kernel will close them when processes die
+    
+    // Wait only for foreground processes
+    if (!left_is_background)
+    {
+        int32_t left_status;
+        wait(left_pid, &left_status);
+        clearInputBuffer();
+    }
+    
+    // If both processes are background, return control to shell immediately
 
     return 0;
 }
