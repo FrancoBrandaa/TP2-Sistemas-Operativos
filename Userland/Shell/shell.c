@@ -318,7 +318,7 @@ static int execute_command(Command *cmd, int argc, char **argv, int run_in_backg
 }
 
 // Function to execute a piped command
-static int execute_pipe(char *left_cmd, char *right_cmd)
+static int execute_pipe(char *left_cmd, char *right_cmd, int run_left_in_background)
 {
     // Parse left command arguments
     char *left_argv[MAX_ARGS];
@@ -383,8 +383,26 @@ static int execute_pipe(char *left_cmd, char *right_cmd)
         return -1;
     }
 
-    // Create left process (run in background if allow_background is true)
-    int left_is_background = left_command->handler.process.allow_background;
+    // Determine if left process should run in background
+    int left_is_background = 0; // Default: foreground
+    
+    if (run_left_in_background)
+    {
+        // User requested background with &, check if command allows it
+        if (left_command->handler.process.allow_background)
+        {
+            left_is_background = 1;
+        }
+        else
+        {
+            fprintf(FD_STDERR, "\e[0;31mError: Command '%s' cannot run in background (requires user input)\e[0m\n", left_command->name);
+            closeFD(pipe_fds[0]);
+            closeFD(pipe_fds[1]);
+            return -1;
+        }
+    }
+    
+    // Create left process
     int left_fds[2] = {FD_STDIN, pipe_fds[1]}; // stdin=FD_STDIN, stdout=pipe_write
     int left_pid = createProcess(
         left_command->name,
@@ -512,8 +530,8 @@ int main()
 
         if (pipe_result == 1)
         {
-            // Valid pipe found, execute it
-            last_command_output = execute_pipe(left_cmd, right_cmd);
+            // Valid pipe found, execute it (pass background flag)
+            last_command_output = execute_pipe(left_cmd, right_cmd, run_in_background);
         }
         else if (pipe_result == -1)
         {
