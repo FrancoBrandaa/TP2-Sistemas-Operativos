@@ -166,16 +166,10 @@ test_no_synchro [iterations]   # sin semáforo
 
 Ejecuta comandos en segundo plano sin bloquear la shell.
 
-```bash
-# Comando simple en background
-counter 10 &
-```
-
 **Sintaxis:** `comando [&]`
 
 **Reglas / comportamiento:**
 - Agregar `&` al final fuerza background aunque el comando esté marcado como foreground por defecto.
-- Comandos marcados internamente como background ( `loop_ps`) no necesitan `&`, pero aceptan que se les agregue (no cambia nada).
 - Hay procesos que no tiene sentido o no es posible correrlos en background (cat, filter, wc y mvar). En estos casos se le indica al usuario por pantalla y se corre el proceso indicado en foreground.
 - La shell imprime el PID creado y continúa aceptando comandos. Al finalizar el proceso, su mensaje de cierre (si lo tiene) aparece intercalado.
 
@@ -188,11 +182,6 @@ loop &              # Inicia loop en background
 ### Operador de Pipe `|`
 
 Conecta la salida de un comando con la entrada de otro.
-
-```bash
-# Ejemplo básico
- counter | filter
-```
 
 **Sintaxis básica:** `comandoA | comandoB`
 
@@ -290,7 +279,7 @@ loop | filter
 ## Decisiones de Diseño y Limitaciones
 
 ### Recolección de procesos (wait)
-Como no incluimos jerarquía en los procesos, decidimos pasarle como parametro a nuestra funcion `wait` el `PID` del proceso que debe esperar y un puntero `status` donde devuelve la salida de este.
+Como no incluimos jerarquía en los procesos, decidimos pasarle como parámetro a nuestra función `wait` el `PID` del proceso que debe esperar y un puntero `status` donde devuelve la salida de este.
 
 Ventajas: 
 - Mantiene la tabla de procesos limpia sin necesidad de tener una jerarquia implementada, ya que esta hubiera generado otros nuevos problemas a solucionar. 
@@ -303,7 +292,7 @@ Limitaciones:
 
 ### Jerarquía de procesos y terminación del padre
 
- En esta implementación NO existe jerarquía padre→hijo. Un proceso que crea otro no queda registrado como su padre y, por lo tanto, al matar al proceso creador los procesos que haya lanzado continúan ejecutándose sin verse afectados. No hay propagación de señales ni “muerte en cascada”.
+ Por lo mismo que antes, un proceso que crea otro no queda registrado como su padre y, por lo tanto, al matar al proceso creador los procesos que haya lanzado continúan ejecutándose sin verse afectados. No hay propagación de señales ni “muerte en cascada”.
 
 Ventajas:
 - Menor complejidad en la tabla de procesos y en la función `wait`.
@@ -311,7 +300,7 @@ Ventajas:
 - Permite que el comando mvar funcione correctamente.
 
 Limitaciones: 
-- Al matar un proceso que crea y mata peocesos constantemente (por ejemplo test_processes) quedan procesos corriendo que no sirven de mucho. Para esto existe el comando `kill all`. 
+- Al matar un proceso que crea y mata procesos constantemente (por ejemplo test_processes) quedan procesos corriendo que no sirven de mucho. Para esto existe el comando `kill all`. 
 - No existe coordinación automática de cierre entre procesos relacionados. 
 - El usuario debe gestionar manualmente la terminación de cada proceso.  
 
@@ -320,10 +309,12 @@ Limitaciones:
  
  Cuenta con un mecanismo de aging que aplica un "boost temporal" a procesos que esperan demasiado tiempo a ser seleccionados para correr, restaurando la prioridad original tras su turno.  
  
- Se decidió que Init (PID 1) y Shell (PID 2) sean excluidos del aging/boost para siempre tener prioridad frente a otros procesos en el caso de la shell y nunca ser ejecutado si hay otro proceso en el caso del Init, pues este solo corre si no hay otros corriendo.
+ Se decidió que Init (PID 1) y Shell (PID 2) sean excluidos del aging/boost. Esto para que la shell siempre tenga prioridad frente a otros procesos secundarios y para que el Init nunca ser ejecutado si hay otro proceso READY, pues este solo corre si no hay otros procesos disponibles.
  
  Ventajas: 
- - Implementación sencilla y estable, resuelve el problema de la inanición y tiene un comportamiento predecible entre niveles de prioridad.
+ - Implementación sencilla y estable
+ - Resuelve el problema de la inanición 
+ - Tiene un comportamiento predecible entre niveles de prioridad.
 
 Limitaciones: 
 - Aunque el aging funciona y cumple con su deber, es una versión muy simple de este y no contempla casos muy específicos.  
@@ -332,7 +323,7 @@ Limitaciones:
 ### Código Base
  El proyecto está basado en el template "x64 Bare Bones" proporcionado por la cátedra de Sistemas Operativos del ITBA.
  
- #### Código de Terceros #1. 
+ #### Código de Terceros. 
 
  **Font 8x8**: Fuente de bitmap básica
  - Archivo: `Kernel/include/font_basic_8x8.h` 
@@ -343,13 +334,12 @@ Limitaciones:
 Se utilizó GitHub Copilot como asistente durante el desarrollo para:  
 - Autocompletado de código repetitivo 
 - Sugerencias de nombres de variables y funciones 
-- Generación de comentarios de documentación#- Ayuda con sintaxis de Assembly x86-64e 
-
+- Generación de comentarios de documentación
+- Aporte de ideas para problemas/conflictos surgidos durante el desarrollo (Brainstorming).
+  
 **Nota importante**: Todo el código generado por IA fue revisado, modificado y testeado exhaustivamente. 
 
 ### Referencias Consultadas
 - OSDev Wiki: https://wiki.osdev.org/
 - Documentación de GDB
 - Documentación de QEMU
-
-
