@@ -2,12 +2,6 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "../include/semaphoreManager.h"
 
-//TODO:
-// El sistema registra qué procesos abrieron el semáforo,
-// pero no restringe el uso de las operaciones de sincronización a esos procesos.
-
-//Para mi, deberiamos cada vez que se hace un wait o aluna operacion con un semaforo en particular
-// chequiar si el proceso lo abrio antes;
 
 sem_t sems[MAX_SEMS];
 
@@ -150,12 +144,7 @@ int semPost(int semId){
     return 0;
 }
 
-int semValue(int semId){
-    if (!semExists(semId)){
-        return -1;
-    }
-    return sems[semId].value;
-}
+
 
 int semDestroy(int semId){
 

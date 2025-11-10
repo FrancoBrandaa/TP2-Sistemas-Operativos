@@ -89,13 +89,7 @@ int semPost(int semId);
  */
 int semDestroy(int semId);
 
-/*
- * Retrieves the current value of a semaphore.
- * Parameters:
- *   semId - The ID of the semaphore.
- * Returns the value of the semaphore, or a negative value on failure.
- */
-int semValue(int semId);
+
 
 /*
  * Sets the semaphore to an absolute value (>=0). If the value increases, up to the delta
