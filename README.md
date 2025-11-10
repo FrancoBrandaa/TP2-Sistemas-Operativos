@@ -12,8 +12,7 @@ Sistema operativo básico desarrollado en C y Assembly para arquitectura x86-64.
 
 ---
 
-## Tabla de Contenidos TODO: AL FINAL corregir esto
-
+## Tabla de Contenidos:
 - [Compilación y Ejecución](#compilación-y-ejecución)
 - [Comandos de la Shell](#comandos-de-la-shell)
 - [Tests](#tests)
