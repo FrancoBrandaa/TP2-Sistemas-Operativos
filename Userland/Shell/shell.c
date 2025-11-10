@@ -118,7 +118,7 @@ Command commands[] = {
      .description = "Runs ps in a loop to monitor shell state",
      .usage = "loop_ps",
      .type = CMD_PROCESS,
-     .handler.process = {.entrypoint = loop_ps_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 1, .allow_background = 1}},
+     .handler.process = {.entrypoint = loop_ps_wrapper, .priority = DEFAULT_PRIORITY, .is_background = 0, .allow_background = 1}},
 
     {.name = "filter",
      .description = "Reads from stdin and filters out vowels",

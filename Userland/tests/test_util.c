@@ -7,7 +7,7 @@
 
 // Default values for test commands
 #define DEFAULT_TEST_MM_MEMORY "1024"   // 1 KB
-#define DEFAULT_TEST_PRIO_VALUE "1000000000" // 1000000000 iterations
+#define DEFAULT_TEST_PRIO_VALUE "1000000" // 1000000 iterations
 #define DEFAULT_TEST_PROCESSES_MAX "5"  // 5 processes
 
 #define DEFAULT_TEST_SYNC_ITERS "1000" // 1000 iterations
